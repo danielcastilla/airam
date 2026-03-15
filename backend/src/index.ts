@@ -42,6 +42,7 @@ app.use('/api/auth', authRoutes);
 // Protected routes
 app.use('/api/applications', authMiddleware, applicationRoutes);
 app.use('/api/technologies', authMiddleware, technologyRoutes);
+
 app.use('/api/interfaces', authMiddleware, interfaceRoutes);
 app.use('/api/persons', authMiddleware, personRoutes);
 app.use('/api/dependencies', authMiddleware, dependencyRoutes);
