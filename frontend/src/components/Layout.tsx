@@ -16,6 +16,8 @@ import {
   Avatar,
   Menu,
   MenuItem,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -54,14 +56,28 @@ interface LayoutProps {
 }
 
 export default function Layout({ children }: LayoutProps) {
-  const [open, setOpen] = useState(true);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [desktopOpen, setDesktopOpen] = useState(true);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuthStore();
 
   const handleDrawerToggle = () => {
-    setOpen(!open);
+    if (isMobile) {
+      setMobileOpen(!mobileOpen);
+    } else {
+      setDesktopOpen(!desktopOpen);
+    }
+  };
+
+  const handleNavigation = (path: string) => {
+    navigate(path);
+    if (isMobile) {
+      setMobileOpen(false);
+    }
   };
 
   const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -77,6 +93,56 @@ export default function Layout({ children }: LayoutProps) {
     logout();
     navigate('/login');
   };
+
+  const drawerContent = (
+    <Box sx={{ overflow: 'auto', py: 1 }}>
+      <List>
+        {menuItems.map((item, index) => 
+          'divider' in item ? (
+            <Divider key={index} sx={{ my: 1 }} />
+          ) : (
+            <ListItem key={item.text} disablePadding sx={{ display: 'block' }}>
+              <ListItemButton
+                selected={location.pathname === item.path}
+                onClick={() => handleNavigation(item.path)}
+                sx={{
+                  minHeight: 48,
+                  justifyContent: (isMobile || desktopOpen) ? 'initial' : 'center',
+                  px: 2.5,
+                  mx: 1,
+                  borderRadius: 1,
+                  '&.Mui-selected': {
+                    backgroundColor: 'primary.main',
+                    color: 'white',
+                    '&:hover': {
+                      backgroundColor: 'primary.dark',
+                    },
+                    '& .MuiListItemIcon-root': {
+                      color: 'white',
+                    },
+                  },
+                }}
+              >
+                <ListItemIcon
+                  sx={{
+                    minWidth: 0,
+                    mr: (isMobile || desktopOpen) ? 2 : 'auto',
+                    justifyContent: 'center',
+                  }}
+                >
+                  {item.icon}
+                </ListItemIcon>
+                <ListItemText 
+                  primary={item.text} 
+                  sx={{ opacity: (isMobile || desktopOpen) ? 1 : 0 }} 
+                />
+              </ListItemButton>
+            </ListItem>
+          )
+        )}
+      </List>
+    </Box>
+  );
 
   return (
     <Box sx={{ display: 'flex' }}>
@@ -97,7 +163,7 @@ export default function Layout({ children }: LayoutProps) {
             edge="start"
             sx={{ mr: 2 }}
           >
-            {open ? <ChevronLeftIcon /> : <MenuIcon />}
+            {(isMobile ? mobileOpen : desktopOpen) ? <ChevronLeftIcon /> : <MenuIcon />}
           </IconButton>
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1, fontWeight: 700 }}>
             AIRAM
@@ -127,13 +193,35 @@ export default function Layout({ children }: LayoutProps) {
         </Toolbar>
       </AppBar>
 
+      {/* Mobile Drawer */}
+      <Drawer
+        variant="temporary"
+        open={mobileOpen}
+        onClose={handleDrawerToggle}
+        ModalProps={{
+          keepMounted: true, // Better open performance on mobile
+        }}
+        sx={{
+          display: { xs: 'block', md: 'none' },
+          '& .MuiDrawer-paper': {
+            width: drawerWidth,
+            boxSizing: 'border-box',
+          },
+        }}
+      >
+        <Toolbar />
+        {drawerContent}
+      </Drawer>
+
+      {/* Desktop Drawer */}
       <Drawer
         variant="permanent"
         sx={{
-          width: open ? drawerWidth : 72,
+          display: { xs: 'none', md: 'block' },
+          width: desktopOpen ? drawerWidth : 72,
           flexShrink: 0,
           '& .MuiDrawer-paper': {
-            width: open ? drawerWidth : 72,
+            width: desktopOpen ? drawerWidth : 72,
             boxSizing: 'border-box',
             borderRight: '1px solid',
             borderColor: 'divider',
@@ -143,62 +231,17 @@ export default function Layout({ children }: LayoutProps) {
         }}
       >
         <Toolbar />
-        <Box sx={{ overflow: 'auto', py: 1 }}>
-          <List>
-            {menuItems.map((item, index) => 
-              'divider' in item ? (
-                <Divider key={index} sx={{ my: 1 }} />
-              ) : (
-                <ListItem key={item.text} disablePadding sx={{ display: 'block' }}>
-                  <ListItemButton
-                    selected={location.pathname === item.path}
-                    onClick={() => navigate(item.path)}
-                    sx={{
-                      minHeight: 48,
-                      justifyContent: open ? 'initial' : 'center',
-                      px: 2.5,
-                      mx: 1,
-                      borderRadius: 1,
-                      '&.Mui-selected': {
-                        backgroundColor: 'primary.main',
-                        color: 'white',
-                        '&:hover': {
-                          backgroundColor: 'primary.dark',
-                        },
-                        '& .MuiListItemIcon-root': {
-                          color: 'white',
-                        },
-                      },
-                    }}
-                  >
-                    <ListItemIcon
-                      sx={{
-                        minWidth: 0,
-                        mr: open ? 2 : 'auto',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      {item.icon}
-                    </ListItemIcon>
-                    <ListItemText 
-                      primary={item.text} 
-                      sx={{ opacity: open ? 1 : 0 }} 
-                    />
-                  </ListItemButton>
-                </ListItem>
-              )
-            )}
-          </List>
-        </Box>
+        {drawerContent}
       </Drawer>
 
       <Box
         component="main"
         sx={{
           flexGrow: 1,
-          p: 3,
+          p: { xs: 2, sm: 3 },
           backgroundColor: 'background.default',
           minHeight: '100vh',
+          width: { xs: '100%', md: `calc(100% - ${desktopOpen ? drawerWidth : 72}px)` },
         }}
       >
         <Toolbar />

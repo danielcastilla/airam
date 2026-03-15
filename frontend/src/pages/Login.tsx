@@ -50,9 +50,9 @@ export default function Login() {
       }}
     >
       <Card sx={{ maxWidth: 400, width: '100%' }}>
-        <CardContent sx={{ p: 4 }}>
-          <Box sx={{ textAlign: 'center', mb: 4 }}>
-            <Typography variant="h4" fontWeight={700} color="primary">
+        <CardContent sx={{ p: { xs: 2, sm: 4 } }}>
+          <Box sx={{ textAlign: 'center', mb: { xs: 3, sm: 4 } }}>
+            <Typography variant="h4" fontWeight={700} color="primary" sx={{ fontSize: { xs: '1.75rem', sm: '2.125rem' } }}>
               AIRAM
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>

@@ -242,9 +242,9 @@ export default function ImpactAnalysis() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, gap: 2, mb: 3 }}>
         <Box>
-          <Typography variant="h4" fontWeight={700} gutterBottom>
+          <Typography variant="h4" fontWeight={700} gutterBottom sx={{ fontSize: { xs: '1.5rem', sm: '2.125rem' } }}>
             Impact Analysis
           </Typography>
           <Typography variant="body1" color="text.secondary">
@@ -256,14 +256,14 @@ export default function ImpactAnalysis() {
       {/* Application Selector */}
       <Card sx={{ mb: 3 }}>
         <CardContent>
-          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, alignItems: { xs: 'stretch', sm: 'center' } }}>
             <Autocomplete
               options={applications}
               getOptionLabel={(option) => option.name}
               value={selectedApp}
               onChange={handleAppChange}
               loading={appsLoading}
-              sx={{ minWidth: 350 }}
+              sx={{ minWidth: { xs: '100%', sm: 350 }, flex: { xs: 1, sm: 'none' } }}
               renderInput={(params) => (
                 <TextField
                   {...params}
@@ -303,6 +303,7 @@ export default function ImpactAnalysis() {
                 startIcon={<RefreshIcon />}
                 onClick={() => fetchImpactAnalysis(selectedApp.id)}
                 disabled={loading}
+                sx={{ alignSelf: { xs: 'stretch', sm: 'auto' } }}
               >
                 Refresh
               </Button>
@@ -324,9 +325,9 @@ export default function ImpactAnalysis() {
       )}
 
       {impactData && !loading && (
-        <Box sx={{ display: 'flex', gap: 3 }}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: 3 }}>
           {/* Impact Graph */}
-          <Card sx={{ flex: 1 }}>
+          <Card sx={{ flex: 1, order: { xs: 2, lg: 1 } }}>
             <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider', display: 'flex', alignItems: 'center' }}>
               <Typography variant="h6">Dependency Graph</Typography>
               <Box sx={{ flex: 1 }} />
@@ -342,7 +343,7 @@ export default function ImpactAnalysis() {
                 </ToggleButton>
               </ToggleButtonGroup>
             </Box>
-            <Box sx={{ height: 500, backgroundColor: '#f8fafc' }}>
+            <Box sx={{ height: { xs: 300, sm: 400, md: 500 }, backgroundColor: '#f8fafc' }}>
               <CytoscapeComponent
                 elements={getElements()}
                 stylesheet={cytoscapeStylesheet}
@@ -354,7 +355,7 @@ export default function ImpactAnalysis() {
           </Card>
 
           {/* Impact Summary */}
-          <Box sx={{ width: 320 }}>
+          <Box sx={{ width: { xs: '100%', lg: 320 }, order: { xs: 1, lg: 2 } }}>
             {/* Risk Alert */}
             {getRiskLevel() && (
               <Alert

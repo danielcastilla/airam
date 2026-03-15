@@ -102,16 +102,16 @@ export default function Technologies() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'center' }, gap: 2, mb: 3 }}>
         <Box>
-          <Typography variant="h4" fontWeight={700} gutterBottom>
+          <Typography variant="h4" fontWeight={700} gutterBottom sx={{ fontSize: { xs: '1.5rem', sm: '2.125rem' } }}>
             Technologies
           </Typography>
           <Typography variant="body1" color="text.secondary">
             Manage technology stack and versions
           </Typography>
         </Box>
-        <Button variant="contained" startIcon={<AddIcon />}>
+        <Button variant="contained" startIcon={<AddIcon />} sx={{ alignSelf: { xs: 'stretch', sm: 'auto' } }}>
           Add Technology
         </Button>
       </Box>
@@ -131,9 +131,9 @@ export default function Technologies() {
                 </InputAdornment>
               ),
             }}
-            sx={{ minWidth: 250 }}
+            sx={{ minWidth: { xs: '100%', sm: 250 }, flex: { xs: '1 1 100%', sm: '0 0 auto' } }}
           />
-          <FormControl size="small" sx={{ minWidth: 150 }}>
+          <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 150 }, flex: { xs: '1 1 100%', sm: '0 0 auto' } }}>
             <InputLabel>Status</InputLabel>
             <Select
               value={statusFilter}
@@ -146,7 +146,7 @@ export default function Technologies() {
               ))}
             </Select>
           </FormControl>
-          <FormControl size="small" sx={{ minWidth: 150 }}>
+          <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 150 }, flex: { xs: '1 1 100%', sm: '0 0 auto' } }}>
             <InputLabel>Category</InputLabel>
             <Select
               value={categoryFilter}
@@ -164,15 +164,15 @@ export default function Technologies() {
 
       {/* Table */}
       <Card>
-        <TableContainer>
-          <Table>
+        <TableContainer sx={{ overflowX: 'auto' }}>
+          <Table sx={{ minWidth: 650 }}>
             <TableHead>
               <TableRow>
                 <TableCell>Name</TableCell>
-                <TableCell>Version</TableCell>
-                <TableCell>Category</TableCell>
+                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Version</TableCell>
+                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Category</TableCell>
                 <TableCell>Status</TableCell>
-                <TableCell>End of Life</TableCell>
+                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>End of Life</TableCell>
                 <TableCell align="right">Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -200,8 +200,8 @@ export default function Technologies() {
                         </Typography>
                       )}
                     </TableCell>
-                    <TableCell>{tech.version || '-'}</TableCell>
-                    <TableCell>
+                    <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{tech.version || '-'}</TableCell>
+                    <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                       <Chip label={tech.category} size="small" variant="outlined" />
                     </TableCell>
                     <TableCell>
@@ -211,7 +211,7 @@ export default function Technologies() {
                         color={STATUS_COLORS[tech.status]}
                       />
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                       {tech.end_of_life_date ? (
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                           {isEndOfLife(tech.end_of_life_date) && (

@@ -227,9 +227,9 @@ export default function ArchitectureMap() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, gap: 2, mb: 3 }}>
         <Box>
-          <Typography variant="h4" fontWeight={700} gutterBottom>
+          <Typography variant="h4" fontWeight={700} gutterBottom sx={{ fontSize: { xs: '1.5rem', sm: '2.125rem' } }}>
             Architecture Map
           </Typography>
           <Typography variant="body1" color="text.secondary">
@@ -238,11 +238,11 @@ export default function ArchitectureMap() {
         </Box>
       </Box>
 
-      <Box sx={{ display: 'flex', gap: 3 }}>
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: 3 }}>
         {/* Graph */}
-        <Card sx={{ flex: 1 }}>
-          <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider', display: 'flex', gap: 2, alignItems: 'center' }}>
-            <FormControl size="small" sx={{ minWidth: 150 }}>
+        <Card sx={{ flex: 1, order: { xs: 2, lg: 1 } }}>
+          <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider', display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, alignItems: { xs: 'stretch', sm: 'center' } }}>
+            <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 150 } }}>
               <InputLabel>Edge Filter</InputLabel>
               <Select
                 value={edgeFilter}
@@ -255,9 +255,9 @@ export default function ArchitectureMap() {
               </Select>
             </FormControl>
 
-            <Box sx={{ flex: 1 }} />
+            <Box sx={{ flex: 1, display: { xs: 'none', sm: 'block' } }} />
 
-            <ToggleButtonGroup size="small">
+            <ToggleButtonGroup size="small" sx={{ alignSelf: { xs: 'center', sm: 'auto' } }}>
               <ToggleButton value="zoomIn" onClick={handleZoomIn}>
                 <ZoomInIcon />
               </ToggleButton>
@@ -270,7 +270,7 @@ export default function ArchitectureMap() {
             </ToggleButtonGroup>
           </Box>
 
-          <Box sx={{ height: 600, backgroundColor: '#f8fafc' }}>
+          <Box sx={{ height: { xs: 350, sm: 450, md: 600 }, backgroundColor: '#f8fafc' }}>
             <CytoscapeComponent
               elements={getElements()}
               stylesheet={cytoscapeStylesheet}
@@ -282,7 +282,7 @@ export default function ArchitectureMap() {
         </Card>
 
         {/* Legend & Details */}
-        <Box sx={{ width: 280 }}>
+        <Box sx={{ width: { xs: '100%', lg: 280 }, order: { xs: 1, lg: 2 } }}>
           {/* Legend */}
           <Card sx={{ mb: 2 }}>
             <CardContent>

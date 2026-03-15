@@ -188,12 +188,13 @@ export default function ApplicationDetail() {
           startIcon={<BackIcon />}
           onClick={() => navigate('/applications')}
           sx={{ mb: 2 }}
+          size="small"
         >
           Back to Applications
         </Button>
         <Card>
-          <CardContent>
-            <Typography variant="h4" fontWeight={700} gutterBottom>
+          <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+            <Typography variant="h4" fontWeight={700} gutterBottom sx={{ fontSize: { xs: '1.25rem', sm: '2.125rem' } }}>
               {isNew ? 'Create New Application' : `Edit: ${application?.name}`}
             </Typography>
             
@@ -326,16 +327,17 @@ export default function ApplicationDetail() {
         startIcon={<BackIcon />}
         onClick={() => navigate('/applications')}
         sx={{ mb: 2 }}
+        size="small"
       >
         Back to Applications
       </Button>
 
       {/* Header */}
       <Card sx={{ mb: 3 }}>
-        <CardContent>
+        <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
           <Grid container spacing={3}>
             <Grid item xs={12} md={8}>
-              <Typography variant="h4" fontWeight={700} gutterBottom>
+              <Typography variant="h4" fontWeight={700} gutterBottom sx={{ fontSize: { xs: '1.5rem', sm: '2.125rem' } }}>
                 {application.name}
               </Typography>
               <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>

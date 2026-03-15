@@ -101,9 +101,16 @@ export default function BusinessApplications() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+      <Box sx={{ 
+        display: 'flex', 
+        flexDirection: { xs: 'column', sm: 'row' },
+        justifyContent: 'space-between', 
+        alignItems: { xs: 'stretch', sm: 'center' }, 
+        gap: 2,
+        mb: 3 
+      }}>
         <Box>
-          <Typography variant="h4" fontWeight={700} gutterBottom>
+          <Typography variant="h4" fontWeight={700} gutterBottom sx={{ fontSize: { xs: '1.5rem', sm: '2.125rem' } }}>
             Business Applications
           </Typography>
           <Typography variant="body1" color="text.secondary">
@@ -114,6 +121,7 @@ export default function BusinessApplications() {
           variant="contained"
           startIcon={<AddIcon />}
           onClick={() => navigate('/business-applications/new')}
+          sx={{ alignSelf: { xs: 'stretch', sm: 'auto' } }}
         >
           Add Business Application
         </Button>
@@ -127,7 +135,7 @@ export default function BusinessApplications() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             size="small"
-            sx={{ minWidth: 250 }}
+            sx={{ minWidth: { xs: '100%', sm: 250 }, flex: { xs: '1 1 100%', sm: '0 0 auto' } }}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -136,7 +144,7 @@ export default function BusinessApplications() {
               ),
             }}
           />
-          <FormControl size="small" sx={{ minWidth: 180 }}>
+          <FormControl size="small" sx={{ minWidth: { xs: '45%', sm: 180 }, flex: { xs: '1 1 45%', sm: '0 0 auto' } }}>
             <InputLabel>Domain</InputLabel>
             <Select
               value={domainFilter}
@@ -149,7 +157,7 @@ export default function BusinessApplications() {
               ))}
             </Select>
           </FormControl>
-          <FormControl size="small" sx={{ minWidth: 180 }}>
+          <FormControl size="small" sx={{ minWidth: { xs: '45%', sm: 180 }, flex: { xs: '1 1 45%', sm: '0 0 auto' } }}>
             <InputLabel>Criticality</InputLabel>
             <Select
               value={criticalityFilter}
@@ -166,17 +174,17 @@ export default function BusinessApplications() {
       </Card>
 
       {/* Table */}
-      <Card>
-        <TableContainer>
+      <Card sx={{ overflowX: 'auto' }}>
+        <TableContainer sx={{ minWidth: 800 }}>
           <Table>
             <TableHead>
               <TableRow>
                 <TableCell>Name</TableCell>
-                <TableCell>Description</TableCell>
+                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Description</TableCell>
                 <TableCell>Domain</TableCell>
                 <TableCell>Criticality</TableCell>
-                <TableCell>Business Owner</TableCell>
-                <TableCell>Capability</TableCell>
+                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Business Owner</TableCell>
+                <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' } }}>Capability</TableCell>
                 <TableCell align="right">Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -203,7 +211,7 @@ export default function BusinessApplications() {
                         <Typography fontWeight={500}>{app.name}</Typography>
                       </Box>
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                       <Typography 
                         sx={{ 
                           maxWidth: 300, 
@@ -230,7 +238,7 @@ export default function BusinessApplications() {
                         variant="outlined"
                       />
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
                       {app.business_owner && (
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <PersonIcon fontSize="small" color="action" />
@@ -238,7 +246,7 @@ export default function BusinessApplications() {
                         </Box>
                       )}
                     </TableCell>
-                    <TableCell>{app.business_capability}</TableCell>
+                    <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' } }}>{app.business_capability}</TableCell>
                     <TableCell align="right">
                       <IconButton 
                         size="small" 

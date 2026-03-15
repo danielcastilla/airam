@@ -148,15 +148,15 @@ export default function Dashboard() {
 
   return (
     <Box>
-      <Typography variant="h4" fontWeight={700} gutterBottom>
+      <Typography variant="h4" fontWeight={700} gutterBottom sx={{ fontSize: { xs: '1.5rem', sm: '2.125rem' } }}>
         Dashboard
       </Typography>
-      <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+      <Typography variant="body1" color="text.secondary" sx={{ mb: { xs: 2, sm: 4 } }}>
         Overview of your enterprise architecture
       </Typography>
 
       {/* Stats Cards */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
+      <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ mb: { xs: 2, sm: 4 } }}>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
             title="Total Applications"

@@ -163,14 +163,15 @@ export default function BusinessApplicationDetail() {
         startIcon={<BackIcon />}
         onClick={() => navigate('/business-applications')}
         sx={{ mb: 2 }}
+        size="small"
       >
         Back to Business Applications
       </Button>
 
       <Card sx={{ mb: 3 }}>
-        <CardContent>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-            <Typography variant="h4" fontWeight={700}>
+        <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, gap: 2, mb: 3 }}>
+            <Typography variant="h4" fontWeight={700} sx={{ fontSize: { xs: '1.25rem', sm: '2.125rem' } }}>
               {isNew ? 'Create New Business Application' : isEditing ? 'Edit Business Application' : formData.name}
             </Typography>
             {!isNew && !isEditing && (
@@ -178,6 +179,7 @@ export default function BusinessApplicationDetail() {
                 variant="outlined"
                 startIcon={<EditIcon />}
                 onClick={() => setIsEditing(true)}
+                sx={{ alignSelf: { xs: 'stretch', sm: 'auto' } }}
               >
                 Edit
               </Button>

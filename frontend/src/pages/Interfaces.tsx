@@ -71,30 +71,30 @@ export default function Interfaces() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'center' }, gap: 2, mb: 3 }}>
         <Box>
-          <Typography variant="h4" fontWeight={700} gutterBottom>
+          <Typography variant="h4" fontWeight={700} gutterBottom sx={{ fontSize: { xs: '1.5rem', sm: '2.125rem' } }}>
             System Interfaces
           </Typography>
           <Typography variant="body1" color="text.secondary">
             Manage integrations between systems
           </Typography>
         </Box>
-        <Button variant="contained" startIcon={<AddIcon />}>
+        <Button variant="contained" startIcon={<AddIcon />} sx={{ alignSelf: { xs: 'stretch', sm: 'auto' } }}>
           Add Interface
         </Button>
       </Box>
 
       <Card>
-        <TableContainer>
-          <Table>
+        <TableContainer sx={{ overflowX: 'auto' }}>
+          <Table sx={{ minWidth: 650 }}>
             <TableHead>
               <TableRow>
                 <TableCell>Name</TableCell>
                 <TableCell>Source → Target</TableCell>
-                <TableCell>Type</TableCell>
-                <TableCell>Technology</TableCell>
-                <TableCell>Criticality</TableCell>
+                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Type</TableCell>
+                <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' } }}>Technology</TableCell>
+                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Criticality</TableCell>
                 <TableCell align="right">Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -124,11 +124,11 @@ export default function Interfaces() {
                         <Chip label={iface.target_application_name} size="small" variant="outlined" />
                       </Box>
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                       <Chip label={iface.integration_type} size="small" />
                     </TableCell>
-                    <TableCell>{iface.technology_name || '-'}</TableCell>
-                    <TableCell>
+                    <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' } }}>{iface.technology_name || '-'}</TableCell>
+                    <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
                       <Chip
                         label={iface.criticality}
                         size="small"

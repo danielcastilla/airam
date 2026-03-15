@@ -86,9 +86,16 @@ export default function Persons() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+      <Box sx={{ 
+        display: 'flex', 
+        flexDirection: { xs: 'column', sm: 'row' },
+        justifyContent: 'space-between', 
+        alignItems: { xs: 'stretch', sm: 'center' }, 
+        gap: 2,
+        mb: 3 
+      }}>
         <Box>
-          <Typography variant="h4" fontWeight={700} gutterBottom>
+          <Typography variant="h4" fontWeight={700} gutterBottom sx={{ fontSize: { xs: '1.5rem', sm: '2.125rem' } }}>
             Persons
           </Typography>
           <Typography variant="body1" color="text.secondary">
@@ -99,6 +106,7 @@ export default function Persons() {
           variant="contained"
           startIcon={<AddIcon />}
           onClick={() => navigate('/persons/new')}
+          sx={{ alignSelf: { xs: 'stretch', sm: 'auto' } }}
         >
           Add Person
         </Button>
@@ -112,7 +120,7 @@ export default function Persons() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             size="small"
-            sx={{ minWidth: 250 }}
+            sx={{ minWidth: { xs: '100%', sm: 250 }, flex: { xs: '1 1 100%', sm: '0 0 auto' } }}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -121,7 +129,7 @@ export default function Persons() {
               ),
             }}
           />
-          <FormControl size="small" sx={{ minWidth: 180 }}>
+          <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 180 }, flex: { xs: '1 1 100%', sm: '0 0 auto' } }}>
             <InputLabel>Role</InputLabel>
             <Select
               value={roleFilter}
@@ -138,16 +146,16 @@ export default function Persons() {
       </Card>
 
       {/* Table */}
-      <Card>
-        <TableContainer>
+      <Card sx={{ overflowX: 'auto' }}>
+        <TableContainer sx={{ minWidth: 600 }}>
           <Table>
             <TableHead>
               <TableRow>
                 <TableCell>Name</TableCell>
-                <TableCell>Email</TableCell>
-                <TableCell>Phone</TableCell>
+                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Email</TableCell>
+                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Phone</TableCell>
                 <TableCell>Role</TableCell>
-                <TableCell>Department</TableCell>
+                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Department</TableCell>
                 <TableCell align="right">Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -166,13 +174,13 @@ export default function Persons() {
                     <TableCell>
                       <Typography fontWeight={500}>{person.name}</Typography>
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <EmailIcon fontSize="small" color="action" />
                         <a href={`mailto:${person.email}`}>{person.email}</a>
                       </Box>
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                       {person.phone && (
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <PhoneIcon fontSize="small" color="action" />
@@ -187,7 +195,7 @@ export default function Persons() {
                         size="small"
                       />
                     </TableCell>
-                    <TableCell>{person.department}</TableCell>
+                    <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{person.department}</TableCell>
                     <TableCell align="right">
                       <IconButton size="small" color="primary" onClick={() => navigate(`/persons/${person.id}`)}>
                         <EditIcon />

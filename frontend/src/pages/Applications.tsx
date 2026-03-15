@@ -108,9 +108,16 @@ export default function Applications() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+      <Box sx={{ 
+        display: 'flex', 
+        flexDirection: { xs: 'column', sm: 'row' },
+        justifyContent: 'space-between', 
+        alignItems: { xs: 'stretch', sm: 'center' }, 
+        gap: 2,
+        mb: 3 
+      }}>
         <Box>
-          <Typography variant="h4" fontWeight={700} gutterBottom>
+          <Typography variant="h4" fontWeight={700} gutterBottom sx={{ fontSize: { xs: '1.5rem', sm: '2.125rem' } }}>
             Applications
           </Typography>
           <Typography variant="body1" color="text.secondary">
@@ -121,6 +128,7 @@ export default function Applications() {
           variant="contained"
           startIcon={<AddIcon />}
           onClick={() => navigate('/applications/new')}
+          sx={{ alignSelf: { xs: 'stretch', sm: 'auto' } }}
         >
           Add Application
         </Button>
@@ -141,9 +149,9 @@ export default function Applications() {
                 </InputAdornment>
               ),
             }}
-            sx={{ minWidth: 250 }}
+            sx={{ minWidth: { xs: '100%', sm: 250 }, flex: { xs: '1 1 100%', sm: '0 0 auto' } }}
           />
-          <FormControl size="small" sx={{ minWidth: 150 }}>
+          <FormControl size="small" sx={{ minWidth: { xs: '45%', sm: 150 }, flex: { xs: '1 1 45%', sm: '0 0 auto' } }}>
             <InputLabel>Type</InputLabel>
             <Select
               value={typeFilter}
@@ -156,7 +164,7 @@ export default function Applications() {
               ))}
             </Select>
           </FormControl>
-          <FormControl size="small" sx={{ minWidth: 150 }}>
+          <FormControl size="small" sx={{ minWidth: { xs: '45%', sm: 150 }, flex: { xs: '1 1 45%', sm: '0 0 auto' } }}>
             <InputLabel>Status</InputLabel>
             <Select
               value={statusFilter}
@@ -169,7 +177,7 @@ export default function Applications() {
               ))}
             </Select>
           </FormControl>
-          <FormControl size="small" sx={{ minWidth: 150 }}>
+          <FormControl size="small" sx={{ minWidth: { xs: '45%', sm: 150 }, flex: { xs: '1 1 45%', sm: '0 0 auto' } }}>
             <InputLabel>Criticality</InputLabel>
             <Select
               value={criticalityFilter}
@@ -186,16 +194,16 @@ export default function Applications() {
       </Card>
 
       {/* Table */}
-      <Card>
-        <TableContainer>
+      <Card sx={{ overflowX: 'auto' }}>
+        <TableContainer sx={{ minWidth: 650 }}>
           <Table>
             <TableHead>
               <TableRow>
                 <TableCell>Name</TableCell>
                 <TableCell>Type</TableCell>
                 <TableCell>Status</TableCell>
-                <TableCell>Criticality</TableCell>
-                <TableCell>Department</TableCell>
+                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Criticality</TableCell>
+                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Department</TableCell>
                 <TableCell align="right">Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -217,7 +225,7 @@ export default function Applications() {
                   <TableRow key={app.id} hover>
                     <TableCell>
                       <Typography fontWeight={500}>{app.name}</Typography>
-                      <Typography variant="caption" color="text.secondary">
+                      <Typography variant="caption" color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
                         {app.description?.substring(0, 50)}...
                       </Typography>
                     </TableCell>
@@ -231,14 +239,14 @@ export default function Applications() {
                         color={STATUS_COLORS[app.lifecycle_status]}
                       />
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
                       <Chip 
                         label={app.business_criticality} 
                         size="small" 
                         color={CRITICALITY_COLORS[app.business_criticality]}
                       />
                     </TableCell>
-                    <TableCell>{app.department || '-'}</TableCell>
+                    <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{app.department || '-'}</TableCell>
                     <TableCell align="right">
                       <IconButton 
                         size="small" 

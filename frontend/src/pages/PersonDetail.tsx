@@ -126,13 +126,14 @@ export default function PersonDetail() {
         startIcon={<BackIcon />}
         onClick={() => navigate('/persons')}
         sx={{ mb: 2 }}
+        size="small"
       >
         Back to Persons
       </Button>
 
       <Card>
-        <CardContent>
-          <Typography variant="h4" fontWeight={700} gutterBottom>
+        <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+          <Typography variant="h4" fontWeight={700} gutterBottom sx={{ fontSize: { xs: '1.5rem', sm: '2.125rem' } }}>
             {isNew ? 'Create New Person' : 'Edit Person'}
           </Typography>
 

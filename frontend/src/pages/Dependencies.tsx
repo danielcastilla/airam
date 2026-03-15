@@ -65,28 +65,28 @@ export default function Dependencies() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'center' }, gap: 2, mb: 3 }}>
         <Box>
-          <Typography variant="h4" fontWeight={700} gutterBottom>
+          <Typography variant="h4" fontWeight={700} gutterBottom sx={{ fontSize: { xs: '1.5rem', sm: '2.125rem' } }}>
             Dependencies
           </Typography>
           <Typography variant="body1" color="text.secondary">
             Manage system dependencies
           </Typography>
         </Box>
-        <Button variant="contained" startIcon={<AddIcon />}>
+        <Button variant="contained" startIcon={<AddIcon />} sx={{ alignSelf: { xs: 'stretch', sm: 'auto' } }}>
           Add Dependency
         </Button>
       </Box>
 
       <Card>
-        <TableContainer>
-          <Table>
+        <TableContainer sx={{ overflowX: 'auto' }}>
+          <Table sx={{ minWidth: 650 }}>
             <TableHead>
               <TableRow>
                 <TableCell>Source → Target</TableCell>
-                <TableCell>Type</TableCell>
-                <TableCell>Description</TableCell>
+                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Type</TableCell>
+                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Description</TableCell>
                 <TableCell>Critical</TableCell>
                 <TableCell align="right">Actions</TableCell>
               </TableRow>
@@ -114,10 +114,10 @@ export default function Dependencies() {
                         <Chip label={dep.target_application_name} size="small" variant="outlined" />
                       </Box>
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
                       <Chip label={dep.dependency_type} size="small" />
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                       <Typography variant="body2" color="text.secondary">
                         {dep.description || '-'}
                       </Typography>
