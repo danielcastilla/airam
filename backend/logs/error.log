@@ -1,0 +1,14 @@
+2026-03-15 09:33:48 [error]: Error: password authentication failed for user "postgres"
+2026-03-15 09:36:16 [error]: Error: Invalid credentials
+2026-03-15 09:36:21 [error]: Error: Invalid credentials
+2026-03-15 09:36:22 [error]: Error: Invalid credentials
+2026-03-15 11:09:20 [error]: Auth middleware error: jwt expired
+2026-03-15 11:09:20 [error]: Auth middleware error: jwt expired
+2026-03-15 13:56:28 [error]: Auth middleware error: jwt expired
+2026-03-15 13:56:30 [error]: Auth middleware error: jwt expired
+2026-03-15 14:10:16 [error]: Error: relation "business_applications" does not exist
+2026-03-15 14:10:16 [error]: Error: relation "business_applications" does not exist
+2026-03-15 14:10:19 [error]: Error: relation "business_applications" does not exist
+2026-03-15 14:10:19 [error]: Error: relation "business_applications" does not exist
+2026-03-15 17:25:38 [error]: Auth middleware error: jwt expired
+2026-03-15 17:25:38 [error]: Auth middleware error: jwt expired
