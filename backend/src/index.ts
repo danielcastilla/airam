@@ -25,7 +25,7 @@ const PORT = process.env.PORT || 3001;
 // Middleware
 app.use(helmet());
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+  origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000'],
   credentials: true
 }));
 app.use(express.json());
@@ -53,10 +53,12 @@ app.use('/api/business-applications', authMiddleware, businessApplicationRoutes)
 // Error handling
 app.use(errorHandler);
 
-// Start server
-app.listen(PORT, () => {
-  logger.info(`🚀 AIRAM API Server running on port ${PORT}`);
-  logger.info(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-});
+// Start server only if not in serverless environment
+if (process.env.VERCEL !== '1') {
+  app.listen(PORT, () => {
+    logger.info(`🚀 AIRAM API Server running on port ${PORT}`);
+    logger.info(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+  });
+}
 
 export default app;
