@@ -100,9 +100,9 @@ export default function PersonDetail() {
 
     try {
       if (isNew) {
-        await personsApi.create(formData);
+        await personsApi.create(formData as unknown as Record<string, unknown>);
       } else {
-        await personsApi.update(id!, formData);
+        await personsApi.update(id!, formData as unknown as Record<string, unknown>);
       }
       navigate('/persons');
     } catch (err: any) {

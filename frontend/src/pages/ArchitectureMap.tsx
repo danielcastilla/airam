@@ -12,7 +12,6 @@ import {
   ToggleButton,
   CircularProgress,
   Chip,
-  Paper,
 } from '@mui/material';
 import {
   ZoomIn as ZoomInIcon,

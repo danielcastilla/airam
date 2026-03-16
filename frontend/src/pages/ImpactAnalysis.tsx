@@ -132,7 +132,7 @@ export default function ImpactAnalysis() {
     setSelectedApp(app);
     setImpactData(null);
     if (app) {
-      fetchImpactAnalysis(app.id);
+      fetchImpactAnalysis(String(app.id));
     }
   };
 
@@ -143,9 +143,9 @@ export default function ImpactAnalysis() {
     const edges: any[] = [];
 
     // Root node
-    nodesMap.set(impactData.application.id, {
+    nodesMap.set(String(impactData.application.id), {
       data: {
-        id: impactData.application.id,
+        id: String(impactData.application.id),
         label: impactData.application.name,
         color: '#2563eb',
         size: 60,
@@ -156,38 +156,38 @@ export default function ImpactAnalysis() {
 
     // Direct dependencies
     impactData.directDependencies.forEach((dep) => {
-      if (!nodesMap.has(dep.id)) {
-        nodesMap.set(dep.id, {
+      if (!nodesMap.has(String(dep.id))) {
+        nodesMap.set(String(dep.id), {
           data: {
-            id: dep.id,
+            id: String(dep.id),
             label: dep.name,
             color: DEPTH_COLORS[1],
             size: 45,
             depth: 1,
-            criticality: dep.criticality,
+            criticality: dep.business_criticality,
           },
         });
       }
       edges.push({
         data: {
           id: `edge-${impactData.application.id}-${dep.id}`,
-          source: impactData.application.id,
-          target: dep.id,
+          source: String(impactData.application.id),
+          target: String(dep.id),
         },
       });
     });
 
     // Indirect dependencies
     impactData.indirectDependencies.forEach((dep) => {
-      if (!nodesMap.has(dep.id)) {
-        nodesMap.set(dep.id, {
+      if (!nodesMap.has(String(dep.id))) {
+        nodesMap.set(String(dep.id), {
           data: {
-            id: dep.id,
+            id: String(dep.id),
             label: dep.name,
             color: DEPTH_COLORS[2],
             size: 35,
             depth: 2,
-            criticality: dep.criticality,
+            criticality: dep.business_criticality,
           },
         });
       }
@@ -195,12 +195,12 @@ export default function ImpactAnalysis() {
 
     // Interfaces as edges where possible
     impactData.affectedInterfaces.forEach((iface, index) => {
-      if (nodesMap.has(iface.sourceId) && nodesMap.has(iface.targetId)) {
+      if (nodesMap.has(String(iface.source_application_id)) && nodesMap.has(String(iface.target_application_id))) {
         edges.push({
           data: {
             id: `iface-${index}`,
-            source: iface.sourceId,
-            target: iface.targetId,
+            source: String(iface.source_application_id),
+            target: String(iface.target_application_id),
             label: iface.name,
           },
         });
@@ -234,10 +234,15 @@ export default function ImpactAnalysis() {
 
   const getRiskLevel = () => {
     if (!impactData) return null;
-    const total = impactData.totalImpactedSystems;
+    const total = impactData.directDependencies.length + impactData.indirectDependencies.length + impactData.affectedInterfaces.length;
     if (total >= 10) return { level: 'HIGH', color: 'error' };
     if (total >= 5) return { level: 'MEDIUM', color: 'warning' };
     return { level: 'LOW', color: 'success' };
+  };
+
+  const getTotalImpactedSystems = () => {
+    if (!impactData) return 0;
+    return impactData.directDependencies.length + impactData.indirectDependencies.length + impactData.affectedInterfaces.length;
   };
 
   return (
@@ -286,9 +291,9 @@ export default function ImpactAnalysis() {
                     <span>{option.name}</span>
                     <Chip
                       size="small"
-                      label={option.criticality}
+                      label={option.business_criticality}
                       sx={{
-                        backgroundColor: CRITICALITY_COLORS[option.criticality],
+                        backgroundColor: CRITICALITY_COLORS[option.business_criticality],
                         color: 'white',
                         fontSize: '0.7rem',
                       }}
@@ -301,7 +306,7 @@ export default function ImpactAnalysis() {
               <Button
                 variant="outlined"
                 startIcon={<RefreshIcon />}
-                onClick={() => fetchImpactAnalysis(selectedApp.id)}
+                onClick={() => fetchImpactAnalysis(String(selectedApp.id))}
                 disabled={loading}
                 sx={{ alignSelf: { xs: 'stretch', sm: 'auto' } }}
               >
@@ -367,7 +372,7 @@ export default function ImpactAnalysis() {
                   Impact Risk: {getRiskLevel()!.level}
                 </Typography>
                 <Typography variant="body2">
-                  {impactData.totalImpactedSystems} systems would be affected
+                  {getTotalImpactedSystems()} systems would be affected
                 </Typography>
               </Alert>
             )}
@@ -405,7 +410,7 @@ export default function ImpactAnalysis() {
                   </Box>
                   <Box>
                     <Typography variant="h4" color="error.main">
-                      {impactData.totalImpactedSystems}
+                      {getTotalImpactedSystems()}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       Total Impacted
@@ -435,10 +440,10 @@ export default function ImpactAnalysis() {
                         secondary={
                           <Chip
                             size="small"
-                            label={dep.criticality}
+                            label={dep.business_criticality}
                             sx={{
                               mt: 0.5,
-                              backgroundColor: CRITICALITY_COLORS[dep.criticality],
+                              backgroundColor: CRITICALITY_COLORS[dep.business_criticality],
                               color: 'white',
                               fontSize: '0.65rem',
                               height: 20,

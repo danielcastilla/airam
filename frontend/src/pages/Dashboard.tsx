@@ -16,9 +16,7 @@ import {
   Apps as AppsIcon,
   Code as TechIcon,
   SwapHoriz as InterfaceIcon,
-  AccountTree as DependencyIcon,
   Warning as WarningIcon,
-  Star as StarIcon,
 } from '@mui/icons-material';
 import {
   PieChart,

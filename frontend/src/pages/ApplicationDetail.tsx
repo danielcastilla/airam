@@ -17,7 +17,6 @@ import {
   TableRow,
   CircularProgress,
   Button,
-  IconButton,
   Divider,
   TextField,
   FormControl,
@@ -38,7 +37,7 @@ import {
 } from '@mui/icons-material';
 import { applicationsApi, interfacesApi, dependenciesApi, customAttributesApi } from '../services/api';
 import { Application, Technology, SystemInterface, Person, Dependency, BusinessCriticality, LifecycleStatus, ApplicationType } from '../types';
-import CustomAttributesDisplay, { useCustomAttributes } from '../components/CustomAttributesDisplay';
+import CustomAttributesDisplay from '../components/CustomAttributesDisplay';
 
 const CRITICALITY_COLORS: Record<BusinessCriticality, 'error' | 'warning' | 'primary' | 'success'> = {
   CRITICAL: 'error',
