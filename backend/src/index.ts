@@ -23,11 +23,21 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Middleware
-app.use(helmet());
-app.use(cors({
+// CORS configuration - must be before other middleware
+const corsOptions = {
   origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000'],
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+};
+
+// Handle preflight requests
+app.options('*', cors(corsOptions));
+
+// Middleware
+app.use(cors(corsOptions));
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
