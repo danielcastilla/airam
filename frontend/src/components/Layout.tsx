@@ -33,6 +33,7 @@ import {
   Logout as LogoutIcon,
   Person as PersonIcon,
   Business as BusinessIcon,
+  AdminPanelSettings as AdminIcon,
 } from '@mui/icons-material';
 import { useAuthStore } from '../stores/authStore';
 
@@ -185,6 +186,12 @@ export default function Layout({ children }: LayoutProps) {
               {user?.name}
             </MenuItem>
             <Divider />
+            {user?.role === 'admin' && (
+              <MenuItem onClick={() => { handleMenuClose(); navigate('/admin-templates'); }}>
+                <AdminIcon sx={{ mr: 1 }} />
+                Admin Templates
+              </MenuItem>
+            )}
             <MenuItem onClick={handleLogout}>
               <LogoutIcon sx={{ mr: 1 }} />
               Logout

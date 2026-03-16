@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -39,6 +40,7 @@ const STATUS_COLORS: Record<TechnologyStatus, 'success' | 'warning' | 'error' | 
 };
 
 export default function Technologies() {
+  const navigate = useNavigate();
   const [technologies, setTechnologies] = useState<Technology[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
@@ -111,7 +113,7 @@ export default function Technologies() {
             Manage technology stack and versions
           </Typography>
         </Box>
-        <Button variant="contained" startIcon={<AddIcon />} sx={{ alignSelf: { xs: 'stretch', sm: 'auto' } }}>
+        <Button variant="contained" startIcon={<AddIcon />} sx={{ alignSelf: { xs: 'stretch', sm: 'auto' } }} onClick={() => navigate('/technologies/new')}>
           Add Technology
         </Button>
       </Box>
@@ -191,7 +193,7 @@ export default function Technologies() {
                 </TableRow>
               ) : (
                 technologies.map((tech) => (
-                  <TableRow key={tech.id} hover>
+                  <TableRow key={tech.id} hover sx={{ cursor: 'pointer' }} onClick={() => navigate(`/technologies/${tech.id}`)}>
                     <TableCell>
                       <Typography fontWeight={500}>{tech.name}</Typography>
                       {tech.description && (
@@ -222,13 +224,13 @@ export default function Technologies() {
                       ) : '-'}
                     </TableCell>
                     <TableCell align="right">
-                      <IconButton size="small">
+                      <IconButton size="small" onClick={(e) => { e.stopPropagation(); navigate(`/technologies/${tech.id}?edit=true`); }}>
                         <EditIcon />
                       </IconButton>
                       <IconButton
                         size="small"
                         color="error"
-                        onClick={() => handleDelete(tech.id)}
+                        onClick={(e) => { e.stopPropagation(); handleDelete(tech.id); }}
                       >
                         <DeleteIcon />
                       </IconButton>

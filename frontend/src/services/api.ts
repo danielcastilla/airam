@@ -225,4 +225,85 @@ export const businessApplicationsApi = {
     api.delete(`/business-applications/${id}/applications/${appId}`),
 };
 
+// Custom Attributes API
+export type EntityType = 'BUSINESS_APPLICATION' | 'APPLICATION' | 'TECHNOLOGY' | 'INTERFACE' | 'DEPENDENCY';
+export type FieldType = 'STRING' | 'NUMBER' | 'BOOLEAN' | 'DATE' | 'SELECT' | 'TEXTAREA' | 'URL' | 'EMAIL';
+
+export interface CustomAttributeSection {
+  id: number;
+  entity_type: EntityType;
+  name: string;
+  description?: string;
+  display_order: number;
+  is_collapsed: boolean;
+}
+
+export interface CustomAttributeDefinition {
+  id: number;
+  entity_type: EntityType;
+  section_id?: number | null;
+  section_name?: string;
+  name: string;
+  label: string;
+  field_type: FieldType;
+  is_required: boolean;
+  default_value?: string;
+  placeholder?: string;
+  help_text?: string;
+  options?: { value: string; label: string }[];
+  validation_rules?: Record<string, unknown>;
+  display_order: number;
+  is_active: boolean;
+}
+
+export const customAttributesApi = {
+  // Sections
+  getSections: (entityType?: EntityType) =>
+    api.get('/custom-attributes/sections', { params: entityType ? { entity_type: entityType } : {} }),
+  
+  createSection: (data: Partial<CustomAttributeSection>) =>
+    api.post('/custom-attributes/sections', data),
+  
+  updateSection: (id: number, data: Partial<CustomAttributeSection>) =>
+    api.put(`/custom-attributes/sections/${id}`, data),
+  
+  deleteSection: (id: number) =>
+    api.delete(`/custom-attributes/sections/${id}`),
+  
+  reorderSections: (entityType: EntityType, orderedIds: number[]) =>
+    api.post('/custom-attributes/sections/reorder', { entity_type: entityType, ordered_ids: orderedIds }),
+  
+  // Definitions
+  getDefinitions: (entityType?: EntityType, includeInactive = false) =>
+    api.get('/custom-attributes/definitions', { 
+      params: { 
+        ...(entityType ? { entity_type: entityType } : {}),
+        include_inactive: includeInactive 
+      } 
+    }),
+  
+  createDefinition: (data: Partial<CustomAttributeDefinition>) =>
+    api.post('/custom-attributes/definitions', data),
+  
+  updateDefinition: (id: number, data: Partial<CustomAttributeDefinition>) =>
+    api.put(`/custom-attributes/definitions/${id}`, data),
+  
+  deleteDefinition: (id: number) =>
+    api.delete(`/custom-attributes/definitions/${id}`),
+  
+  reorderDefinitions: (sectionId: number | null, orderedIds: number[]) =>
+    api.post('/custom-attributes/definitions/reorder', { section_id: sectionId, ordered_ids: orderedIds }),
+  
+  // Values
+  getValues: (entityType: EntityType, entityId: number) =>
+    api.get(`/custom-attributes/values/${entityType}/${entityId}`),
+  
+  setValues: (entityType: EntityType, entityId: number, values: Record<string, unknown>) =>
+    api.post(`/custom-attributes/values/${entityType}/${entityId}`, { values }),
+  
+  // Templates
+  getTemplate: (entityType: EntityType) =>
+    api.get(`/custom-attributes/templates/${entityType}`),
+};
+
 export default api;

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -32,6 +33,7 @@ const CRITICALITY_COLORS: Record<BusinessCriticality, 'error' | 'warning' | 'pri
 };
 
 export default function Interfaces() {
+  const navigate = useNavigate();
   const [interfaces, setInterfaces] = useState<SystemInterface[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
@@ -80,7 +82,7 @@ export default function Interfaces() {
             Manage integrations between systems
           </Typography>
         </Box>
-        <Button variant="contained" startIcon={<AddIcon />} sx={{ alignSelf: { xs: 'stretch', sm: 'auto' } }}>
+        <Button variant="contained" startIcon={<AddIcon />} sx={{ alignSelf: { xs: 'stretch', sm: 'auto' } }} onClick={() => navigate('/interfaces/new')}>
           Add Interface
         </Button>
       </Box>
@@ -113,7 +115,7 @@ export default function Interfaces() {
                 </TableRow>
               ) : (
                 interfaces.map((iface) => (
-                  <TableRow key={iface.id} hover>
+                  <TableRow key={iface.id} hover sx={{ cursor: 'pointer' }} onClick={() => navigate(`/interfaces/${iface.id}`)}>
                     <TableCell>
                       <Typography fontWeight={500}>{iface.name}</Typography>
                     </TableCell>
@@ -136,13 +138,13 @@ export default function Interfaces() {
                       />
                     </TableCell>
                     <TableCell align="right">
-                      <IconButton size="small">
+                      <IconButton size="small" onClick={(e) => { e.stopPropagation(); navigate(`/interfaces/${iface.id}?edit=true`); }}>
                         <EditIcon />
                       </IconButton>
                       <IconButton
                         size="small"
                         color="error"
-                        onClick={() => handleDelete(iface.id)}
+                        onClick={(e) => { e.stopPropagation(); handleDelete(iface.id); }}
                       >
                         <DeleteIcon />
                       </IconButton>

@@ -26,8 +26,9 @@ import {
   Edit as EditIcon,
   Apps as AppsIcon,
 } from '@mui/icons-material';
-import { businessApplicationsApi } from '../services/api';
+import { businessApplicationsApi, customAttributesApi } from '../services/api';
 import { BusinessDomain, BusinessCriticality, Application } from '../types';
+import CustomAttributesDisplay from '../components/CustomAttributesDisplay';
 
 interface BusinessAppFormData {
   name: string;
@@ -71,11 +72,16 @@ export default function BusinessApplicationDetail() {
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(isNew || editMode);
   const [linkedApps, setLinkedApps] = useState<Application[]>([]);
+  const [customValues, setCustomValues] = useState<Record<string, any>>({});
 
   useEffect(() => {
     if (!isNew && id) {
       fetchBusinessApp(id);
       fetchLinkedApps(id);
+      // Load custom attribute values
+      customAttributesApi.getValues('BUSINESS_APPLICATION', parseInt(id))
+        .then(res => setCustomValues(res.data.data || {}))
+        .catch(console.error);
     }
   }, [id, isNew]);
 
@@ -132,10 +138,21 @@ export default function BusinessApplicationDetail() {
     setError(null);
 
     try {
+      let appId: number;
       if (isNew) {
-        await businessApplicationsApi.create({ ...formData });
+        const response = await businessApplicationsApi.create({ ...formData });
+        appId = response.data.data.id;
+        // Save custom attributes for new application
+        if (Object.keys(customValues).length > 0) {
+          await customAttributesApi.setValues('BUSINESS_APPLICATION', appId, customValues);
+        }
       } else {
         await businessApplicationsApi.update(id!, { ...formData });
+        appId = parseInt(id!);
+        // Save custom attributes
+        if (Object.keys(customValues).length > 0) {
+          await customAttributesApi.setValues('BUSINESS_APPLICATION', appId, customValues);
+        }
       }
       navigate('/business-applications');
     } catch (err: any) {
@@ -293,6 +310,17 @@ export default function BusinessApplicationDetail() {
                 />
               </Grid>
 
+              {/* Custom Attributes */}
+              <Grid item xs={12}>
+                <CustomAttributesDisplay
+                  entityType="BUSINESS_APPLICATION"
+                  entityId={isNew ? 0 : parseInt(id!)}
+                  isEditing={true}
+                  values={customValues}
+                  onChange={setCustomValues}
+                />
+              </Grid>
+
               <Grid item xs={12}>
                 <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
                   <Button variant="outlined" onClick={handleCancel}>
@@ -347,6 +375,14 @@ export default function BusinessApplicationDetail() {
               <Grid item xs={12}>
                 <Typography variant="subtitle2" color="text.secondary">Strategic Value</Typography>
                 <Typography>{formData.strategic_value || '-'}</Typography>
+              </Grid>
+              
+              {/* Custom Attributes */}
+              <Grid item xs={12}>
+                <CustomAttributesDisplay
+                  entityType="BUSINESS_APPLICATION"
+                  entityId={parseInt(id!)}
+                />
               </Grid>
             </Grid>
           )}

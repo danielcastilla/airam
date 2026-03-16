@@ -5,14 +5,18 @@ import Dashboard from './pages/Dashboard';
 import Applications from './pages/Applications';
 import ApplicationDetail from './pages/ApplicationDetail';
 import Technologies from './pages/Technologies';
+import TechnologyDetail from './pages/TechnologyDetail';
 import Interfaces from './pages/Interfaces';
+import InterfaceDetail from './pages/InterfaceDetail';
 import Persons from './pages/Persons';
 import PersonDetail from './pages/PersonDetail';
 import Dependencies from './pages/Dependencies';
+import DependencyDetail from './pages/DependencyDetail';
 import ArchitectureMap from './pages/ArchitectureMap';
 import ImpactAnalysis from './pages/ImpactAnalysis';
 import BusinessApplications from './pages/BusinessApplications';
 import BusinessApplicationDetail from './pages/BusinessApplicationDetail';
+import AdminTemplates from './pages/AdminTemplates';
 import Login from './pages/Login';
 import { useAuthStore } from './stores/authStore';
 
@@ -39,12 +43,16 @@ function App() {
                   <Route path="/business-applications" element={<BusinessApplications />} />
                   <Route path="/business-applications/:id" element={<BusinessApplicationDetail />} />
                   <Route path="/technologies" element={<Technologies />} />
+                  <Route path="/technologies/:id" element={<TechnologyDetail />} />
                   <Route path="/interfaces" element={<Interfaces />} />
+                  <Route path="/interfaces/:id" element={<InterfaceDetail />} />
                   <Route path="/persons" element={<Persons />} />
                   <Route path="/persons/:id" element={<PersonDetail />} />
                   <Route path="/dependencies" element={<Dependencies />} />
+                  <Route path="/dependencies/:id" element={<DependencyDetail />} />
                   <Route path="/architecture-map" element={<ArchitectureMap />} />
                   <Route path="/impact-analysis" element={<ImpactAnalysis />} />
+                  <Route path="/admin-templates" element={<AdminTemplates />} />
                   <Route path="*" element={<Navigate to="/" />} />
                 </Routes>
               </Layout>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -26,6 +27,7 @@ import { dependenciesApi } from '../services/api';
 import { Dependency } from '../types';
 
 export default function Dependencies() {
+  const navigate = useNavigate();
   const [dependencies, setDependencies] = useState<Dependency[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
@@ -74,7 +76,7 @@ export default function Dependencies() {
             Manage system dependencies
           </Typography>
         </Box>
-        <Button variant="contained" startIcon={<AddIcon />} sx={{ alignSelf: { xs: 'stretch', sm: 'auto' } }}>
+        <Button variant="contained" startIcon={<AddIcon />} sx={{ alignSelf: { xs: 'stretch', sm: 'auto' } }} onClick={() => navigate('/dependencies/new')}>
           Add Dependency
         </Button>
       </Box>
@@ -106,7 +108,7 @@ export default function Dependencies() {
                 </TableRow>
               ) : (
                 dependencies.map((dep) => (
-                  <TableRow key={dep.id} hover>
+                  <TableRow key={dep.id} hover sx={{ cursor: 'pointer' }} onClick={() => navigate(`/dependencies/${dep.id}`)}>
                     <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Chip label={dep.source_application_name} size="small" variant="outlined" />
@@ -133,13 +135,13 @@ export default function Dependencies() {
                       )}
                     </TableCell>
                     <TableCell align="right">
-                      <IconButton size="small">
+                      <IconButton size="small" onClick={(e) => { e.stopPropagation(); navigate(`/dependencies/${dep.id}?edit=true`); }}>
                         <EditIcon />
                       </IconButton>
                       <IconButton
                         size="small"
                         color="error"
-                        onClick={() => handleDelete(dep.id)}
+                        onClick={(e) => { e.stopPropagation(); handleDelete(dep.id); }}
                       >
                         <DeleteIcon />
                       </IconButton>

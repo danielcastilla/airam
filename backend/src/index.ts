@@ -16,6 +16,7 @@ import dependencyRoutes from './routes/dependency.routes';
 import dashboardRoutes from './routes/dashboard.routes';
 import impactRoutes from './routes/impact.routes';
 import businessApplicationRoutes from './routes/businessApplication.routes';
+import customAttributeRoutes from './routes/customAttribute.routes';
 
 dotenv.config();
 
@@ -49,6 +50,7 @@ app.use('/api/dependencies', authMiddleware, dependencyRoutes);
 app.use('/api/dashboard', authMiddleware, dashboardRoutes);
 app.use('/api/impact', authMiddleware, impactRoutes);
 app.use('/api/business-applications', authMiddleware, businessApplicationRoutes);
+app.use('/api/custom-attributes', authMiddleware, customAttributeRoutes);
 
 // Error handling
 app.use(errorHandler);

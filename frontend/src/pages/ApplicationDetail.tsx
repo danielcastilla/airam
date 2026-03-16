@@ -36,8 +36,9 @@ import {
   Save as SaveIcon,
   Edit as EditIcon,
 } from '@mui/icons-material';
-import { applicationsApi, interfacesApi, dependenciesApi } from '../services/api';
+import { applicationsApi, interfacesApi, dependenciesApi, customAttributesApi } from '../services/api';
 import { Application, Technology, SystemInterface, Person, Dependency, BusinessCriticality, LifecycleStatus, ApplicationType } from '../types';
+import CustomAttributesDisplay, { useCustomAttributes } from '../components/CustomAttributesDisplay';
 
 const CRITICALITY_COLORS: Record<BusinessCriticality, 'error' | 'warning' | 'primary' | 'success'> = {
   CRITICAL: 'error',
@@ -96,6 +97,18 @@ export default function ApplicationDetail() {
 
   const isNew = id === 'new';
   
+  // Custom attributes
+  const [customValues, setCustomValues] = useState<Record<string, any>>({});
+  
+  useEffect(() => {
+    // Load custom attribute values when viewing/editing existing application
+    if (id && !isNew) {
+      customAttributesApi.getValues('APPLICATION', parseInt(id))
+        .then(res => setCustomValues(res.data.data || {}))
+        .catch(console.error);
+    }
+  }, [id, isNew]);
+
   useEffect(() => {
     if (id && !isNew) {
       fetchData(id);
@@ -162,11 +175,22 @@ export default function ApplicationDetail() {
       setSaving(true);
       setError(null);
       try {
+        let appId: number;
         if (isNew) {
           const response = await applicationsApi.create(formData);
-          navigate(`/applications/${response.data.data.id}`);
+          appId = response.data.data.id;
+          // Save custom attributes for new application
+          if (Object.keys(customValues).length > 0) {
+            await customAttributesApi.setValues('APPLICATION', appId, customValues);
+          }
+          navigate(`/applications/${appId}`);
         } else {
           await applicationsApi.update(id!, formData);
+          appId = parseInt(id!);
+          // Save custom attributes
+          if (Object.keys(customValues).length > 0) {
+            await customAttributesApi.setValues('APPLICATION', appId, customValues);
+          }
           setIsEditing(false);
           fetchData(id!);
         }
@@ -292,6 +316,19 @@ export default function ApplicationDetail() {
                   type="url"
                 />
               </Grid>
+              
+              {/* Custom Attributes */}
+              <Grid item xs={12}>
+                <Divider sx={{ my: 2 }} />
+                <CustomAttributesDisplay
+                  entityType="APPLICATION"
+                  entityId={isNew ? 0 : parseInt(id!)}
+                  isEditing={true}
+                  values={customValues}
+                  onChange={setCustomValues}
+                />
+              </Grid>
+              
               <Grid item xs={12}>
                 <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
                   <Button
@@ -602,6 +639,12 @@ export default function ApplicationDetail() {
           </TabPanel>
         </CardContent>
       </Card>
+
+      {/* Custom Attributes */}
+      <CustomAttributesDisplay
+        entityType="APPLICATION"
+        entityId={parseInt(id!)}
+      />
     </Box>
   );
 }

@@ -49,7 +49,7 @@ CREATE TYPE integration_type AS ENUM (
 
 DROP TYPE IF EXISTS person_role CASCADE;
 CREATE TYPE person_role AS ENUM (
-  'FUNCTIONAL_OWNER', 'TECHNICAL_OWNER', 'MAINTENANCE_TEAM', 'ARCHITECT', 'DEVELOPER'
+  'FUNCTIONAL_OWNER', 'TECHNICAL_OWNER', 'MAINTENANCE_TEAM', 'ARCHITECT', 'DEVELOPER', 'ADMIN'
 );
 
 DROP TYPE IF EXISTS dependency_type CASCADE;
@@ -311,4 +311,101 @@ CREATE TRIGGER update_dependencies_updated_at
 
 CREATE TRIGGER update_business_applications_updated_at
     BEFORE UPDATE ON business_applications
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================
+-- CUSTOM ATTRIBUTES SYSTEM
+-- ============================================
+
+-- Entity types that support custom attributes
+DROP TYPE IF EXISTS entity_type CASCADE;
+CREATE TYPE entity_type AS ENUM (
+  'BUSINESS_APPLICATION', 'APPLICATION', 'TECHNOLOGY', 'INTERFACE', 'DEPENDENCY'
+);
+
+-- Field types for custom attributes
+DROP TYPE IF EXISTS field_type CASCADE;
+CREATE TYPE field_type AS ENUM (
+  'STRING', 'NUMBER', 'BOOLEAN', 'DATE', 'SELECT', 'TEXTAREA', 'URL', 'EMAIL'
+);
+
+-- Custom attribute sections (for grouping attributes)
+DROP TABLE IF EXISTS custom_attribute_values CASCADE;
+DROP TABLE IF EXISTS custom_attribute_definitions CASCADE;
+DROP TABLE IF EXISTS custom_attribute_sections CASCADE;
+
+CREATE TABLE custom_attribute_sections (
+  id SERIAL PRIMARY KEY,
+  entity_type entity_type NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  display_order INTEGER NOT NULL DEFAULT 0,
+  is_collapsed BOOLEAN DEFAULT false,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  
+  UNIQUE (entity_type, name)
+);
+
+CREATE INDEX idx_cas_entity ON custom_attribute_sections(entity_type);
+CREATE INDEX idx_cas_order ON custom_attribute_sections(display_order);
+
+-- Custom attribute definitions
+CREATE TABLE custom_attribute_definitions (
+  id SERIAL PRIMARY KEY,
+  entity_type entity_type NOT NULL,
+  section_id INTEGER REFERENCES custom_attribute_sections(id) ON DELETE SET NULL,
+  name VARCHAR(255) NOT NULL,
+  label VARCHAR(255) NOT NULL,
+  field_type field_type NOT NULL,
+  is_required BOOLEAN DEFAULT false,
+  default_value TEXT,
+  placeholder TEXT,
+  help_text TEXT,
+  options JSONB, -- For SELECT type: [{"value": "opt1", "label": "Option 1"}, ...]
+  validation_rules JSONB, -- min, max, pattern, etc.
+  display_order INTEGER NOT NULL DEFAULT 0,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  
+  UNIQUE (entity_type, name)
+);
+
+CREATE INDEX idx_cad_entity ON custom_attribute_definitions(entity_type);
+CREATE INDEX idx_cad_section ON custom_attribute_definitions(section_id);
+CREATE INDEX idx_cad_order ON custom_attribute_definitions(display_order);
+CREATE INDEX idx_cad_active ON custom_attribute_definitions(is_active);
+
+-- Custom attribute values
+CREATE TABLE custom_attribute_values (
+  id SERIAL PRIMARY KEY,
+  attribute_id INTEGER NOT NULL REFERENCES custom_attribute_definitions(id) ON DELETE CASCADE,
+  entity_type entity_type NOT NULL,
+  entity_id INTEGER NOT NULL,
+  value_string TEXT,
+  value_number DECIMAL(20,6),
+  value_boolean BOOLEAN,
+  value_date DATE,
+  value_json JSONB,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  
+  UNIQUE (attribute_id, entity_type, entity_id)
+);
+
+CREATE INDEX idx_cav_attribute ON custom_attribute_values(attribute_id);
+CREATE INDEX idx_cav_entity ON custom_attribute_values(entity_type, entity_id);
+
+-- Triggers for updated_at
+CREATE TRIGGER update_custom_sections_updated_at
+    BEFORE UPDATE ON custom_attribute_sections
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_custom_definitions_updated_at
+    BEFORE UPDATE ON custom_attribute_definitions
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_custom_values_updated_at
+    BEFORE UPDATE ON custom_attribute_values
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
