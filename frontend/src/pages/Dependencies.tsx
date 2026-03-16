@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -23,8 +23,17 @@ import {
   ArrowForward as ArrowIcon,
   Warning as WarningIcon,
 } from '@mui/icons-material';
-import { dependenciesApi } from '../services/api';
+import { dependenciesApi, customAttributesApi, CustomAttributeDefinition } from '../services/api';
 import { Dependency } from '../types';
+import ColumnSelector, { ColumnDefinition, useColumnVisibility } from '../components/ColumnSelector';
+
+// Default columns definition
+const DEFAULT_COLUMNS: ColumnDefinition[] = [
+  { id: 'source_target', label: 'Source → Target', defaultVisible: true },
+  { id: 'dependency_type', label: 'Type', defaultVisible: true },
+  { id: 'description', label: 'Description', defaultVisible: true },
+  { id: 'is_critical', label: 'Critical', defaultVisible: true },
+];
 
 export default function Dependencies() {
   const navigate = useNavigate();
@@ -33,10 +42,40 @@ export default function Dependencies() {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [total, setTotal] = useState(0);
+  const [customAttributes, setCustomAttributes] = useState<CustomAttributeDefinition[]>([]);
+  const [customValues, setCustomValues] = useState<Record<number, Record<string, any>>>({});
+
+  // Build all columns (default + custom)
+  const allColumns = useMemo(() => {
+    const customCols: ColumnDefinition[] = customAttributes
+      .filter(attr => attr.is_active)
+      .map(attr => ({
+        id: `custom_${attr.id}`,
+        label: attr.label,
+        defaultVisible: false,
+        isCustom: true,
+      }));
+    return [...DEFAULT_COLUMNS, ...customCols];
+  }, [customAttributes]);
+
+  const { visibleColumns, toggleColumn, isVisible } = useColumnVisibility(allColumns);
+
+  useEffect(() => {
+    loadCustomAttributes();
+  }, []);
 
   useEffect(() => {
     fetchDependencies();
   }, [page, rowsPerPage]);
+
+  const loadCustomAttributes = async () => {
+    try {
+      const response = await customAttributesApi.getTemplate('DEPENDENCY');
+      setCustomAttributes(response.data.data.attributes || []);
+    } catch (error) {
+      console.error('Failed to load custom attributes:', error);
+    }
+  };
 
   const fetchDependencies = async () => {
     setLoading(true);
@@ -45,8 +84,26 @@ export default function Dependencies() {
         page: page + 1,
         limit: rowsPerPage,
       });
-      setDependencies(response.data.data);
+      const deps = response.data.data;
+      setDependencies(deps);
       setTotal(response.data.total);
+
+      // Load custom values for visible custom columns
+      const visibleCustomCols = Array.from(visibleColumns).filter(id => id.startsWith('custom_'));
+      if (visibleCustomCols.length > 0 && deps.length > 0) {
+        const valuesMap: Record<number, Record<string, any>> = {};
+        await Promise.all(
+          deps.map(async (dep: Dependency) => {
+            try {
+              const res = await customAttributesApi.getValues('DEPENDENCY', dep.id);
+              valuesMap[dep.id] = res.data.data || {};
+            } catch {
+              valuesMap[dep.id] = {};
+            }
+          })
+        );
+        setCustomValues(valuesMap);
+      }
     } catch (error) {
       console.error('Failed to fetch dependencies:', error);
     } finally {
@@ -57,13 +114,26 @@ export default function Dependencies() {
   const handleDelete = async (id: number) => {
     if (window.confirm('Are you sure you want to delete this dependency?')) {
       try {
-        await dependenciesApi.delete(id);
+        await dependenciesApi.delete(String(id));
         fetchDependencies();
       } catch (error) {
         console.error('Failed to delete dependency:', error);
       }
     }
   };
+
+  const getCustomValue = (depId: number, attrId: number) => {
+    const attr = customAttributes.find(a => a.id === attrId);
+    if (!attr) return '-';
+    const values = customValues[depId] || {};
+    const value = values[attr.name];
+    if (value === null || value === undefined || value === '') return '-';
+    if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+    return String(value);
+  };
+
+  // Count visible columns for colspan
+  const visibleColumnCount = Array.from(visibleColumns).length + 1; // +1 for actions
 
   return (
     <Box>
@@ -82,58 +152,83 @@ export default function Dependencies() {
       </Box>
 
       <Card>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 1, borderBottom: '1px solid', borderColor: 'divider' }}>
+          <ColumnSelector
+            columns={allColumns}
+            visibleColumns={visibleColumns}
+            onColumnToggle={toggleColumn}
+          />
+        </Box>
         <TableContainer sx={{ overflowX: 'auto' }}>
           <Table sx={{ minWidth: 650 }}>
             <TableHead>
               <TableRow>
-                <TableCell>Source → Target</TableCell>
-                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Type</TableCell>
-                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Description</TableCell>
-                <TableCell>Critical</TableCell>
+                {isVisible('source_target') && <TableCell>Source → Target</TableCell>}
+                {isVisible('dependency_type') && <TableCell>Type</TableCell>}
+                {isVisible('description') && <TableCell>Description</TableCell>}
+                {isVisible('is_critical') && <TableCell>Critical</TableCell>}
+                {/* Custom attribute headers */}
+                {customAttributes.filter(attr => attr.is_active && isVisible(`custom_${attr.id}`)).map(attr => (
+                  <TableCell key={attr.id}>{attr.label}</TableCell>
+                ))}
                 <TableCell align="right">Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
+                  <TableCell colSpan={visibleColumnCount} align="center" sx={{ py: 4 }}>
                     <CircularProgress />
                   </TableCell>
                 </TableRow>
               ) : dependencies.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
+                  <TableCell colSpan={visibleColumnCount} align="center" sx={{ py: 4 }}>
                     No dependencies found
                   </TableCell>
                 </TableRow>
               ) : (
                 dependencies.map((dep) => (
                   <TableRow key={dep.id} hover sx={{ cursor: 'pointer' }} onClick={() => navigate(`/dependencies/${dep.id}`)}>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Chip label={dep.source_application_name} size="small" variant="outlined" />
-                        <ArrowIcon fontSize="small" color="action" />
-                        <Chip label={dep.target_application_name} size="small" variant="outlined" />
-                      </Box>
-                    </TableCell>
-                    <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
-                      <Chip label={dep.dependency_type} size="small" />
-                    </TableCell>
-                    <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
-                      <Typography variant="body2" color="text.secondary">
-                        {dep.description || '-'}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      {dep.is_critical && (
-                        <Chip
-                          icon={<WarningIcon />}
-                          label="Critical"
-                          size="small"
-                          color="error"
-                        />
-                      )}
-                    </TableCell>
+                    {isVisible('source_target') && (
+                      <TableCell>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Chip label={dep.source_application_name} size="small" variant="outlined" />
+                          <ArrowIcon fontSize="small" color="action" />
+                          <Chip label={dep.target_application_name} size="small" variant="outlined" />
+                        </Box>
+                      </TableCell>
+                    )}
+                    {isVisible('dependency_type') && (
+                      <TableCell>
+                        <Chip label={dep.dependency_type} size="small" />
+                      </TableCell>
+                    )}
+                    {isVisible('description') && (
+                      <TableCell>
+                        <Typography variant="body2" color="text.secondary">
+                          {dep.description || '-'}
+                        </Typography>
+                      </TableCell>
+                    )}
+                    {isVisible('is_critical') && (
+                      <TableCell>
+                        {dep.is_critical && (
+                          <Chip
+                            icon={<WarningIcon />}
+                            label="Critical"
+                            size="small"
+                            color="error"
+                          />
+                        )}
+                      </TableCell>
+                    )}
+                    {/* Custom attribute values */}
+                    {customAttributes.filter(attr => attr.is_active && isVisible(`custom_${attr.id}`)).map(attr => (
+                      <TableCell key={attr.id}>
+                        {getCustomValue(dep.id, attr.id)}
+                      </TableCell>
+                    ))}
                     <TableCell align="right">
                       <IconButton size="small" onClick={(e) => { e.stopPropagation(); navigate(`/dependencies/${dep.id}?edit=true`); }}>
                         <EditIcon />

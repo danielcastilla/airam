@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -29,8 +29,9 @@ import {
   Delete as DeleteIcon,
   Add as AddIcon,
 } from '@mui/icons-material';
-import { applicationsApi } from '../services/api';
+import { applicationsApi, customAttributesApi, CustomAttributeDefinition } from '../services/api';
 import { Application, ApplicationType, LifecycleStatus, BusinessCriticality } from '../types';
+import ColumnSelector, { ColumnDefinition, useColumnVisibility } from '../components/ColumnSelector';
 
 const CRITICALITY_COLORS: Record<BusinessCriticality, 'error' | 'warning' | 'primary' | 'success'> = {
   CRITICAL: 'error',
@@ -48,6 +49,18 @@ const STATUS_COLORS: Record<LifecycleStatus, 'default' | 'primary' | 'success' |
   RETIRED: 'default',
 };
 
+// Default columns definition
+const DEFAULT_COLUMNS: ColumnDefinition[] = [
+  { id: 'name', label: 'Name', defaultVisible: true },
+  { id: 'type', label: 'Type', defaultVisible: true },
+  { id: 'lifecycle_status', label: 'Status', defaultVisible: true },
+  { id: 'business_criticality', label: 'Criticality', defaultVisible: true },
+  { id: 'department', label: 'Department', defaultVisible: true },
+  { id: 'description', label: 'Description', defaultVisible: false },
+  { id: 'documentation_url', label: 'Documentation URL', defaultVisible: false },
+  { id: 'repository_url', label: 'Repository URL', defaultVisible: false },
+];
+
 export default function Applications() {
   const navigate = useNavigate();
   const [applications, setApplications] = useState<Application[]>([]);
@@ -59,10 +72,40 @@ export default function Applications() {
   const [typeFilter, setTypeFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [criticalityFilter, setCriticalityFilter] = useState<string>('');
+  const [customAttributes, setCustomAttributes] = useState<CustomAttributeDefinition[]>([]);
+  const [customValues, setCustomValues] = useState<Record<number, Record<string, any>>>({});
+
+  // Build all columns (default + custom)
+  const allColumns = useMemo(() => {
+    const customCols: ColumnDefinition[] = customAttributes
+      .filter(attr => attr.is_active)
+      .map(attr => ({
+        id: `custom_${attr.id}`,
+        label: attr.label,
+        defaultVisible: false,
+        isCustom: true,
+      }));
+    return [...DEFAULT_COLUMNS, ...customCols];
+  }, [customAttributes]);
+
+  const { visibleColumns, toggleColumn, isVisible } = useColumnVisibility(allColumns);
+
+  useEffect(() => {
+    loadCustomAttributes();
+  }, []);
 
   useEffect(() => {
     fetchApplications();
   }, [page, rowsPerPage, search, typeFilter, statusFilter, criticalityFilter]);
+
+  const loadCustomAttributes = async () => {
+    try {
+      const response = await customAttributesApi.getTemplate('APPLICATION');
+      setCustomAttributes(response.data.data.attributes || []);
+    } catch (error) {
+      console.error('Failed to load custom attributes:', error);
+    }
+  };
 
   const fetchApplications = async () => {
     setLoading(true);
@@ -77,8 +120,26 @@ export default function Applications() {
       if (criticalityFilter) params.business_criticality = criticalityFilter;
 
       const response = await applicationsApi.getAll(params);
-      setApplications(response.data.data);
+      const apps = response.data.data;
+      setApplications(apps);
       setTotal(response.data.total);
+
+      // Load custom values for visible custom columns
+      const visibleCustomCols = Array.from(visibleColumns).filter(id => id.startsWith('custom_'));
+      if (visibleCustomCols.length > 0 && apps.length > 0) {
+        const valuesMap: Record<number, Record<string, any>> = {};
+        await Promise.all(
+          apps.map(async (app: Application) => {
+            try {
+              const res = await customAttributesApi.getValues('APPLICATION', app.id);
+              valuesMap[app.id] = res.data.data || {};
+            } catch {
+              valuesMap[app.id] = {};
+            }
+          })
+        );
+        setCustomValues(valuesMap);
+      }
     } catch (error) {
       console.error('Failed to fetch applications:', error);
     } finally {
@@ -98,13 +159,26 @@ export default function Applications() {
   const handleDelete = async (id: number) => {
     if (window.confirm('Are you sure you want to delete this application?')) {
       try {
-        await applicationsApi.delete(id);
+        await applicationsApi.delete(String(id));
         fetchApplications();
       } catch (error) {
         console.error('Failed to delete application:', error);
       }
     }
   };
+
+  const getCustomValue = (appId: number, attrId: number) => {
+    const attr = customAttributes.find(a => a.id === attrId);
+    if (!attr) return '-';
+    const values = customValues[appId] || {};
+    const value = values[attr.name];
+    if (value === null || value === undefined || value === '') return '-';
+    if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+    return String(value);
+  };
+
+  // Count visible columns for colspan
+  const visibleColumnCount = Array.from(visibleColumns).length + 1; // +1 for actions
 
   return (
     <Box>
@@ -195,58 +269,106 @@ export default function Applications() {
 
       {/* Table */}
       <Card sx={{ overflowX: 'auto' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 1, borderBottom: '1px solid', borderColor: 'divider' }}>
+          <ColumnSelector
+            columns={allColumns}
+            visibleColumns={visibleColumns}
+            onColumnToggle={toggleColumn}
+          />
+        </Box>
         <TableContainer sx={{ minWidth: 650 }}>
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Name</TableCell>
-                <TableCell>Type</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Criticality</TableCell>
-                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Department</TableCell>
+                {isVisible('name') && <TableCell>Name</TableCell>}
+                {isVisible('type') && <TableCell>Type</TableCell>}
+                {isVisible('lifecycle_status') && <TableCell>Status</TableCell>}
+                {isVisible('business_criticality') && <TableCell>Criticality</TableCell>}
+                {isVisible('department') && <TableCell>Department</TableCell>}
+                {isVisible('description') && <TableCell>Description</TableCell>}
+                {isVisible('documentation_url') && <TableCell>Docs URL</TableCell>}
+                {isVisible('repository_url') && <TableCell>Repo URL</TableCell>}
+                {/* Custom attribute headers */}
+                {customAttributes.filter(attr => attr.is_active && isVisible(`custom_${attr.id}`)).map(attr => (
+                  <TableCell key={attr.id}>{attr.label}</TableCell>
+                ))}
                 <TableCell align="right">Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                  <TableCell colSpan={visibleColumnCount} align="center" sx={{ py: 4 }}>
                     <CircularProgress />
                   </TableCell>
                 </TableRow>
               ) : applications.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                  <TableCell colSpan={visibleColumnCount} align="center" sx={{ py: 4 }}>
                     No applications found
                   </TableCell>
                 </TableRow>
               ) : (
                 applications.map((app) => (
                   <TableRow key={app.id} hover>
-                    <TableCell>
-                      <Typography fontWeight={500}>{app.name}</Typography>
-                      <Typography variant="caption" color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
-                        {app.description?.substring(0, 50)}...
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Chip label={app.type} size="small" variant="outlined" />
-                    </TableCell>
-                    <TableCell>
-                      <Chip 
-                        label={app.lifecycle_status} 
-                        size="small" 
-                        color={STATUS_COLORS[app.lifecycle_status]}
-                      />
-                    </TableCell>
-                    <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
-                      <Chip 
-                        label={app.business_criticality} 
-                        size="small" 
-                        color={CRITICALITY_COLORS[app.business_criticality]}
-                      />
-                    </TableCell>
-                    <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{app.department || '-'}</TableCell>
+                    {isVisible('name') && (
+                      <TableCell>
+                        <Typography fontWeight={500}>{app.name}</Typography>
+                      </TableCell>
+                    )}
+                    {isVisible('type') && (
+                      <TableCell>
+                        <Chip label={app.type} size="small" variant="outlined" />
+                      </TableCell>
+                    )}
+                    {isVisible('lifecycle_status') && (
+                      <TableCell>
+                        <Chip 
+                          label={app.lifecycle_status} 
+                          size="small" 
+                          color={STATUS_COLORS[app.lifecycle_status]}
+                        />
+                      </TableCell>
+                    )}
+                    {isVisible('business_criticality') && (
+                      <TableCell>
+                        <Chip 
+                          label={app.business_criticality} 
+                          size="small" 
+                          color={CRITICALITY_COLORS[app.business_criticality]}
+                        />
+                      </TableCell>
+                    )}
+                    {isVisible('department') && (
+                      <TableCell>{app.department || '-'}</TableCell>
+                    )}
+                    {isVisible('description') && (
+                      <TableCell>
+                        <Typography variant="body2" sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {app.description || '-'}
+                        </Typography>
+                      </TableCell>
+                    )}
+                    {isVisible('documentation_url') && (
+                      <TableCell>
+                        {app.documentation_url ? (
+                          <a href={app.documentation_url} target="_blank" rel="noopener noreferrer">Link</a>
+                        ) : '-'}
+                      </TableCell>
+                    )}
+                    {isVisible('repository_url') && (
+                      <TableCell>
+                        {app.repository_url ? (
+                          <a href={app.repository_url} target="_blank" rel="noopener noreferrer">Link</a>
+                        ) : '-'}
+                      </TableCell>
+                    )}
+                    {/* Custom attribute values */}
+                    {customAttributes.filter(attr => attr.is_active && isVisible(`custom_${attr.id}`)).map(attr => (
+                      <TableCell key={attr.id}>
+                        {getCustomValue(app.id, attr.id)}
+                      </TableCell>
+                    ))}
                     <TableCell align="right">
                       <IconButton 
                         size="small" 

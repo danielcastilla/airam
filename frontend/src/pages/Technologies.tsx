@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -29,8 +29,9 @@ import {
   Add as AddIcon,
   Warning as WarningIcon,
 } from '@mui/icons-material';
-import { technologiesApi } from '../services/api';
+import { technologiesApi, customAttributesApi, CustomAttributeDefinition } from '../services/api';
 import { Technology, TechnologyStatus } from '../types';
+import ColumnSelector, { ColumnDefinition, useColumnVisibility } from '../components/ColumnSelector';
 
 const STATUS_COLORS: Record<TechnologyStatus, 'success' | 'warning' | 'error' | 'info'> = {
   ACTIVE: 'success',
@@ -38,6 +39,17 @@ const STATUS_COLORS: Record<TechnologyStatus, 'success' | 'warning' | 'error' | 
   OBSOLETE: 'error',
   EMERGING: 'info',
 };
+
+// Default columns definition
+const DEFAULT_COLUMNS: ColumnDefinition[] = [
+  { id: 'name', label: 'Name', defaultVisible: true },
+  { id: 'version', label: 'Version', defaultVisible: true },
+  { id: 'category', label: 'Category', defaultVisible: true },
+  { id: 'status', label: 'Status', defaultVisible: true },
+  { id: 'end_of_life_date', label: 'End of Life', defaultVisible: true },
+  { id: 'description', label: 'Description', defaultVisible: false },
+  { id: 'documentation_url', label: 'Documentation URL', defaultVisible: false },
+];
 
 export default function Technologies() {
   const navigate = useNavigate();
@@ -50,11 +62,41 @@ export default function Technologies() {
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [categoryFilter, setCategoryFilter] = useState<string>('');
   const [categories, setCategories] = useState<string[]>([]);
+  const [customAttributes, setCustomAttributes] = useState<CustomAttributeDefinition[]>([]);
+  const [customValues, setCustomValues] = useState<Record<number, Record<string, any>>>({});
+
+  // Build all columns (default + custom)
+  const allColumns = useMemo(() => {
+    const customCols: ColumnDefinition[] = customAttributes
+      .filter(attr => attr.is_active)
+      .map(attr => ({
+        id: `custom_${attr.id}`,
+        label: attr.label,
+        defaultVisible: false,
+        isCustom: true,
+      }));
+    return [...DEFAULT_COLUMNS, ...customCols];
+  }, [customAttributes]);
+
+  const { visibleColumns, toggleColumn, isVisible } = useColumnVisibility(allColumns);
+
+  useEffect(() => {
+    loadCustomAttributes();
+    fetchCategories();
+  }, []);
 
   useEffect(() => {
     fetchTechnologies();
-    fetchCategories();
   }, [page, rowsPerPage, search, statusFilter, categoryFilter]);
+
+  const loadCustomAttributes = async () => {
+    try {
+      const response = await customAttributesApi.getTemplate('TECHNOLOGY');
+      setCustomAttributes(response.data.data.attributes || []);
+    } catch (error) {
+      console.error('Failed to load custom attributes:', error);
+    }
+  };
 
   const fetchTechnologies = async () => {
     setLoading(true);
@@ -68,8 +110,26 @@ export default function Technologies() {
       if (categoryFilter) params.category = categoryFilter;
 
       const response = await technologiesApi.getAll(params);
-      setTechnologies(response.data.data);
+      const techs = response.data.data;
+      setTechnologies(techs);
       setTotal(response.data.total);
+
+      // Load custom values for visible custom columns
+      const visibleCustomCols = Array.from(visibleColumns).filter(id => id.startsWith('custom_'));
+      if (visibleCustomCols.length > 0 && techs.length > 0) {
+        const valuesMap: Record<number, Record<string, any>> = {};
+        await Promise.all(
+          techs.map(async (tech: Technology) => {
+            try {
+              const res = await customAttributesApi.getValues('TECHNOLOGY', tech.id);
+              valuesMap[tech.id] = res.data.data || {};
+            } catch {
+              valuesMap[tech.id] = {};
+            }
+          })
+        );
+        setCustomValues(valuesMap);
+      }
     } catch (error) {
       console.error('Failed to fetch technologies:', error);
     } finally {
@@ -89,7 +149,7 @@ export default function Technologies() {
   const handleDelete = async (id: number) => {
     if (window.confirm('Are you sure you want to delete this technology?')) {
       try {
-        await technologiesApi.delete(id);
+        await technologiesApi.delete(String(id));
         fetchTechnologies();
       } catch (error) {
         console.error('Failed to delete technology:', error);
@@ -101,6 +161,19 @@ export default function Technologies() {
     if (!date) return false;
     return new Date(date) < new Date();
   };
+
+  const getCustomValue = (techId: number, attrId: number) => {
+    const attr = customAttributes.find(a => a.id === attrId);
+    if (!attr) return '-';
+    const values = customValues[techId] || {};
+    const value = values[attr.name];
+    if (value === null || value === undefined || value === '') return '-';
+    if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+    return String(value);
+  };
+
+  // Count visible columns for colspan
+  const visibleColumnCount = Array.from(visibleColumns).length + 1; // +1 for actions
 
   return (
     <Box>
@@ -166,63 +239,103 @@ export default function Technologies() {
 
       {/* Table */}
       <Card>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 1, borderBottom: '1px solid', borderColor: 'divider' }}>
+          <ColumnSelector
+            columns={allColumns}
+            visibleColumns={visibleColumns}
+            onColumnToggle={toggleColumn}
+          />
+        </Box>
         <TableContainer sx={{ overflowX: 'auto' }}>
           <Table sx={{ minWidth: 650 }}>
             <TableHead>
               <TableRow>
-                <TableCell>Name</TableCell>
-                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Version</TableCell>
-                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Category</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>End of Life</TableCell>
+                {isVisible('name') && <TableCell>Name</TableCell>}
+                {isVisible('version') && <TableCell>Version</TableCell>}
+                {isVisible('category') && <TableCell>Category</TableCell>}
+                {isVisible('status') && <TableCell>Status</TableCell>}
+                {isVisible('end_of_life_date') && <TableCell>End of Life</TableCell>}
+                {isVisible('description') && <TableCell>Description</TableCell>}
+                {isVisible('documentation_url') && <TableCell>Documentation</TableCell>}
+                {/* Custom attribute headers */}
+                {customAttributes.filter(attr => attr.is_active && isVisible(`custom_${attr.id}`)).map(attr => (
+                  <TableCell key={attr.id}>{attr.label}</TableCell>
+                ))}
                 <TableCell align="right">Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                  <TableCell colSpan={visibleColumnCount} align="center" sx={{ py: 4 }}>
                     <CircularProgress />
                   </TableCell>
                 </TableRow>
               ) : technologies.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                  <TableCell colSpan={visibleColumnCount} align="center" sx={{ py: 4 }}>
                     No technologies found
                   </TableCell>
                 </TableRow>
               ) : (
                 technologies.map((tech) => (
                   <TableRow key={tech.id} hover sx={{ cursor: 'pointer' }} onClick={() => navigate(`/technologies/${tech.id}`)}>
-                    <TableCell>
-                      <Typography fontWeight={500}>{tech.name}</Typography>
-                      {tech.description && (
-                        <Typography variant="caption" color="text.secondary">
-                          {tech.description.substring(0, 50)}...
+                    {isVisible('name') && (
+                      <TableCell>
+                        <Typography fontWeight={500}>{tech.name}</Typography>
+                      </TableCell>
+                    )}
+                    {isVisible('version') && (
+                      <TableCell>{tech.version || '-'}</TableCell>
+                    )}
+                    {isVisible('category') && (
+                      <TableCell>
+                        <Chip label={tech.category} size="small" variant="outlined" />
+                      </TableCell>
+                    )}
+                    {isVisible('status') && (
+                      <TableCell>
+                        <Chip
+                          label={tech.status}
+                          size="small"
+                          color={STATUS_COLORS[tech.status]}
+                        />
+                      </TableCell>
+                    )}
+                    {isVisible('end_of_life_date') && (
+                      <TableCell>
+                        {tech.end_of_life_date ? (
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            {isEndOfLife(tech.end_of_life_date) && (
+                              <WarningIcon color="error" fontSize="small" />
+                            )}
+                            {new Date(tech.end_of_life_date).toLocaleDateString()}
+                          </Box>
+                        ) : '-'}
+                      </TableCell>
+                    )}
+                    {isVisible('description') && (
+                      <TableCell>
+                        <Typography variant="body2" sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {tech.description || '-'}
                         </Typography>
-                      )}
-                    </TableCell>
-                    <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{tech.version || '-'}</TableCell>
-                    <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
-                      <Chip label={tech.category} size="small" variant="outlined" />
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={tech.status}
-                        size="small"
-                        color={STATUS_COLORS[tech.status]}
-                      />
-                    </TableCell>
-                    <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
-                      {tech.end_of_life_date ? (
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                          {isEndOfLife(tech.end_of_life_date) && (
-                            <WarningIcon color="error" fontSize="small" />
-                          )}
-                          {new Date(tech.end_of_life_date).toLocaleDateString()}
-                        </Box>
-                      ) : '-'}
-                    </TableCell>
+                      </TableCell>
+                    )}
+                    {isVisible('documentation_url') && (
+                      <TableCell>
+                        {tech.documentation_url ? (
+                          <a href={tech.documentation_url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
+                            Link
+                          </a>
+                        ) : '-'}
+                      </TableCell>
+                    )}
+                    {/* Custom attribute values */}
+                    {customAttributes.filter(attr => attr.is_active && isVisible(`custom_${attr.id}`)).map(attr => (
+                      <TableCell key={attr.id}>
+                        {getCustomValue(tech.id, attr.id)}
+                      </TableCell>
+                    ))}
                     <TableCell align="right">
                       <IconButton size="small" onClick={(e) => { e.stopPropagation(); navigate(`/technologies/${tech.id}?edit=true`); }}>
                         <EditIcon />

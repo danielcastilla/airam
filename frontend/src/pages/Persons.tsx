@@ -20,6 +20,7 @@ import {
   MenuItem,
   Button,
   IconButton,
+  CircularProgress,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -31,14 +32,25 @@ import {
 } from '@mui/icons-material';
 import { personsApi } from '../services/api';
 import { Person, PersonRole } from '../types';
+import ColumnSelector, { ColumnDefinition, useColumnVisibility } from '../components/ColumnSelector';
 
-const ROLE_COLORS: Record<PersonRole, 'primary' | 'secondary' | 'success' | 'warning' | 'info'> = {
+const ROLE_COLORS: Record<PersonRole, 'primary' | 'secondary' | 'success' | 'warning' | 'info' | 'error'> = {
   FUNCTIONAL_OWNER: 'primary',
   TECHNICAL_OWNER: 'secondary',
   MAINTENANCE_TEAM: 'success',
   ARCHITECT: 'warning',
   DEVELOPER: 'info',
+  ADMIN: 'error',
 };
+
+// Default columns definition
+const DEFAULT_COLUMNS: ColumnDefinition[] = [
+  { id: 'name', label: 'Name', defaultVisible: true },
+  { id: 'email', label: 'Email', defaultVisible: true },
+  { id: 'phone', label: 'Phone', defaultVisible: false },
+  { id: 'role', label: 'Role', defaultVisible: true },
+  { id: 'department', label: 'Department', defaultVisible: true },
+];
 
 export default function Persons() {
   const navigate = useNavigate();
@@ -49,6 +61,8 @@ export default function Persons() {
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('');
+
+  const { visibleColumns, toggleColumn, isVisible } = useColumnVisibility(DEFAULT_COLUMNS);
 
   useEffect(() => {
     fetchPersons();
@@ -83,6 +97,9 @@ export default function Persons() {
       console.error('Failed to delete person:', error);
     }
   };
+
+  // Count visible columns for colspan
+  const visibleColumnCount = Array.from(visibleColumns).length + 1; // +1 for actions
 
   return (
     <Box>
@@ -147,60 +164,97 @@ export default function Persons() {
 
       {/* Table */}
       <Card sx={{ overflowX: 'auto' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 1, borderBottom: '1px solid', borderColor: 'divider' }}>
+          <ColumnSelector
+            columns={DEFAULT_COLUMNS}
+            visibleColumns={visibleColumns}
+            onColumnToggle={toggleColumn}
+          />
+        </Box>
         <TableContainer sx={{ minWidth: 600 }}>
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Name</TableCell>
-                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Email</TableCell>
-                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Phone</TableCell>
-                <TableCell>Role</TableCell>
-                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Department</TableCell>
+                {isVisible('name') && <TableCell>Name</TableCell>}
+                {isVisible('email') && <TableCell>Email</TableCell>}
+                {isVisible('phone') && <TableCell>Phone</TableCell>}
+                {isVisible('role') && <TableCell>Role</TableCell>}
+                {isVisible('department') && <TableCell>Department</TableCell>}
                 <TableCell align="right">Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={6} align="center">Loading...</TableCell>
+                  <TableCell colSpan={visibleColumnCount} align="center" sx={{ py: 4 }}>
+                    <CircularProgress />
+                  </TableCell>
                 </TableRow>
               ) : persons.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} align="center">No persons found</TableCell>
+                  <TableCell colSpan={visibleColumnCount} align="center" sx={{ py: 4 }}>
+                    No persons found
+                  </TableCell>
                 </TableRow>
               ) : (
                 persons.map((person) => (
-                  <TableRow key={person.id} hover>
-                    <TableCell>
-                      <Typography fontWeight={500}>{person.name}</Typography>
-                    </TableCell>
-                    <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <EmailIcon fontSize="small" color="action" />
-                        <a href={`mailto:${person.email}`}>{person.email}</a>
-                      </Box>
-                    </TableCell>
-                    <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
-                      {person.phone && (
+                  <TableRow key={person.id} hover sx={{ cursor: 'pointer' }} onClick={() => navigate(`/persons/${person.id}`)}>
+                    {isVisible('name') && (
+                      <TableCell>
+                        <Typography fontWeight={500}>{person.name}</Typography>
+                      </TableCell>
+                    )}
+                    {isVisible('email') && (
+                      <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <PhoneIcon fontSize="small" color="action" />
-                          {person.phone}
+                          <EmailIcon fontSize="small" color="action" />
+                          <a href={`mailto:${person.email}`} onClick={(e) => e.stopPropagation()}>
+                            {person.email}
+                          </a>
                         </Box>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={person.role.replace('_', ' ')}
-                        color={ROLE_COLORS[person.role]}
-                        size="small"
-                      />
-                    </TableCell>
-                    <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{person.department}</TableCell>
+                      </TableCell>
+                    )}
+                    {isVisible('phone') && (
+                      <TableCell>
+                        {person.phone ? (
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <PhoneIcon fontSize="small" color="action" />
+                            {person.phone}
+                          </Box>
+                        ) : '-'}
+                      </TableCell>
+                    )}
+                    {isVisible('role') && (
+                      <TableCell>
+                        <Chip
+                          label={person.role.replace('_', ' ')}
+                          color={ROLE_COLORS[person.role]}
+                          size="small"
+                        />
+                      </TableCell>
+                    )}
+                    {isVisible('department') && (
+                      <TableCell>{person.department || '-'}</TableCell>
+                    )}
                     <TableCell align="right">
-                      <IconButton size="small" color="primary" onClick={() => navigate(`/persons/${person.id}`)}>
+                      <IconButton 
+                        size="small" 
+                        color="primary" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/persons/${person.id}`);
+                        }}
+                      >
                         <EditIcon />
                       </IconButton>
-                      <IconButton size="small" color="error" onClick={() => handleDelete(person.id)}>
+                      <IconButton 
+                        size="small" 
+                        color="error" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(String(person.id));
+                        }}
+                      >
                         <DeleteIcon />
                       </IconButton>
                     </TableCell>

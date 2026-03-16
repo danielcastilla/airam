@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -20,6 +20,7 @@ import {
   MenuItem,
   Button,
   IconButton,
+  CircularProgress,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -29,8 +30,9 @@ import {
   Business as BusinessIcon,
   Person as PersonIcon,
 } from '@mui/icons-material';
-import { businessApplicationsApi } from '../services/api';
+import { businessApplicationsApi, customAttributesApi, CustomAttributeDefinition } from '../services/api';
 import { BusinessApplication, BusinessDomain, BusinessCriticality } from '../types';
+import ColumnSelector, { ColumnDefinition, useColumnVisibility } from '../components/ColumnSelector';
 
 const DOMAIN_COLORS: Record<BusinessDomain, 'primary' | 'secondary' | 'success' | 'warning' | 'info' | 'error' | 'default'> = {
   SALES: 'primary',
@@ -53,6 +55,16 @@ const CRITICALITY_COLORS: Record<BusinessCriticality, 'error' | 'warning' | 'inf
   LOW: 'default',
 };
 
+// Default columns definition
+const DEFAULT_COLUMNS: ColumnDefinition[] = [
+  { id: 'name', label: 'Name', defaultVisible: true },
+  { id: 'description', label: 'Description', defaultVisible: false },
+  { id: 'business_domain', label: 'Domain', defaultVisible: true },
+  { id: 'business_criticality', label: 'Criticality', defaultVisible: true },
+  { id: 'business_owner', label: 'Business Owner', defaultVisible: true },
+  { id: 'business_capability', label: 'Capability', defaultVisible: false },
+];
+
 export default function BusinessApplications() {
   const navigate = useNavigate();
   const [businessApps, setBusinessApps] = useState<BusinessApplication[]>([]);
@@ -63,10 +75,40 @@ export default function BusinessApplications() {
   const [search, setSearch] = useState('');
   const [domainFilter, setDomainFilter] = useState<string>('');
   const [criticalityFilter, setCriticalityFilter] = useState<string>('');
+  const [customAttributes, setCustomAttributes] = useState<CustomAttributeDefinition[]>([]);
+  const [customValues, setCustomValues] = useState<Record<number, Record<string, any>>>({});
+
+  // Build all columns (default + custom)
+  const allColumns = useMemo(() => {
+    const customCols: ColumnDefinition[] = customAttributes
+      .filter(attr => attr.is_active)
+      .map(attr => ({
+        id: `custom_${attr.id}`,
+        label: attr.label,
+        defaultVisible: false,
+        isCustom: true,
+      }));
+    return [...DEFAULT_COLUMNS, ...customCols];
+  }, [customAttributes]);
+
+  const { visibleColumns, toggleColumn, isVisible } = useColumnVisibility(allColumns);
+
+  useEffect(() => {
+    loadCustomAttributes();
+  }, []);
 
   useEffect(() => {
     fetchBusinessApps();
   }, [page, rowsPerPage, search, domainFilter, criticalityFilter]);
+
+  const loadCustomAttributes = async () => {
+    try {
+      const response = await customAttributesApi.getTemplate('BUSINESS_APPLICATION');
+      setCustomAttributes(response.data.data.attributes || []);
+    } catch (error) {
+      console.error('Failed to load custom attributes:', error);
+    }
+  };
 
   const fetchBusinessApps = async () => {
     setLoading(true);
@@ -80,8 +122,26 @@ export default function BusinessApplications() {
       if (criticalityFilter) params.business_criticality = criticalityFilter;
 
       const response = await businessApplicationsApi.getAll(params);
-      setBusinessApps(response.data.data);
+      const apps = response.data.data;
+      setBusinessApps(apps);
       setTotal(response.data.total || 0);
+
+      // Load custom values for visible custom columns
+      const visibleCustomCols = Array.from(visibleColumns).filter(id => id.startsWith('custom_'));
+      if (visibleCustomCols.length > 0 && apps.length > 0) {
+        const valuesMap: Record<number, Record<string, any>> = {};
+        await Promise.all(
+          apps.map(async (app: BusinessApplication) => {
+            try {
+              const res = await customAttributesApi.getValues('BUSINESS_APPLICATION', app.id);
+              valuesMap[app.id] = res.data.data || {};
+            } catch {
+              valuesMap[app.id] = {};
+            }
+          })
+        );
+        setCustomValues(valuesMap);
+      }
     } catch (error) {
       console.error('Failed to fetch business applications:', error);
     } finally {
@@ -98,6 +158,19 @@ export default function BusinessApplications() {
       console.error('Failed to delete business application:', error);
     }
   };
+
+  const getCustomValue = (appId: number, attrId: number) => {
+    const attr = customAttributes.find(a => a.id === attrId);
+    if (!attr) return '-';
+    const values = customValues[appId] || {};
+    const value = values[attr.name];
+    if (value === null || value === undefined || value === '') return '-';
+    if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+    return String(value);
+  };
+
+  // Count visible columns for colspan
+  const visibleColumnCount = Array.from(visibleColumns).length + 1; // +1 for actions
 
   return (
     <Box>
@@ -175,27 +248,42 @@ export default function BusinessApplications() {
 
       {/* Table */}
       <Card sx={{ overflowX: 'auto' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 1, borderBottom: '1px solid', borderColor: 'divider' }}>
+          <ColumnSelector
+            columns={allColumns}
+            visibleColumns={visibleColumns}
+            onColumnToggle={toggleColumn}
+          />
+        </Box>
         <TableContainer sx={{ minWidth: 800 }}>
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Name</TableCell>
-                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Description</TableCell>
-                <TableCell>Domain</TableCell>
-                <TableCell>Criticality</TableCell>
-                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Business Owner</TableCell>
-                <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' } }}>Capability</TableCell>
+                {isVisible('name') && <TableCell>Name</TableCell>}
+                {isVisible('description') && <TableCell>Description</TableCell>}
+                {isVisible('business_domain') && <TableCell>Domain</TableCell>}
+                {isVisible('business_criticality') && <TableCell>Criticality</TableCell>}
+                {isVisible('business_owner') && <TableCell>Business Owner</TableCell>}
+                {isVisible('business_capability') && <TableCell>Capability</TableCell>}
+                {/* Custom attribute headers */}
+                {customAttributes.filter(attr => attr.is_active && isVisible(`custom_${attr.id}`)).map(attr => (
+                  <TableCell key={attr.id}>{attr.label}</TableCell>
+                ))}
                 <TableCell align="right">Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={7} align="center">Loading...</TableCell>
+                  <TableCell colSpan={visibleColumnCount} align="center" sx={{ py: 4 }}>
+                    <CircularProgress />
+                  </TableCell>
                 </TableRow>
               ) : businessApps.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} align="center">No business applications found</TableCell>
+                  <TableCell colSpan={visibleColumnCount} align="center" sx={{ py: 4 }}>
+                    No business applications found
+                  </TableCell>
                 </TableRow>
               ) : (
                 businessApps.map((app) => (
@@ -205,48 +293,66 @@ export default function BusinessApplications() {
                     onClick={() => navigate(`/business-applications/${app.id}`)}
                     sx={{ cursor: 'pointer' }}
                   >
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <BusinessIcon color="primary" fontSize="small" />
-                        <Typography fontWeight={500}>{app.name}</Typography>
-                      </Box>
-                    </TableCell>
-                    <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
-                      <Typography 
-                        sx={{ 
-                          maxWidth: 300, 
-                          overflow: 'hidden', 
-                          textOverflow: 'ellipsis', 
-                          whiteSpace: 'nowrap' 
-                        }}
-                      >
-                        {app.description}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={app.business_domain.replace('_', ' ')}
-                        color={DOMAIN_COLORS[app.business_domain]}
-                        size="small"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={app.business_criticality}
-                        color={CRITICALITY_COLORS[app.business_criticality]}
-                        size="small"
-                        variant="outlined"
-                      />
-                    </TableCell>
-                    <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
-                      {app.business_owner && (
+                    {isVisible('name') && (
+                      <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <PersonIcon fontSize="small" color="action" />
-                          {app.business_owner}
+                          <BusinessIcon color="primary" fontSize="small" />
+                          <Typography fontWeight={500}>{app.name}</Typography>
                         </Box>
-                      )}
-                    </TableCell>
-                    <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' } }}>{app.business_capability}</TableCell>
+                      </TableCell>
+                    )}
+                    {isVisible('description') && (
+                      <TableCell>
+                        <Typography 
+                          sx={{ 
+                            maxWidth: 300, 
+                            overflow: 'hidden', 
+                            textOverflow: 'ellipsis', 
+                            whiteSpace: 'nowrap' 
+                          }}
+                        >
+                          {app.description || '-'}
+                        </Typography>
+                      </TableCell>
+                    )}
+                    {isVisible('business_domain') && (
+                      <TableCell>
+                        <Chip
+                          label={app.business_domain.replace('_', ' ')}
+                          color={DOMAIN_COLORS[app.business_domain]}
+                          size="small"
+                        />
+                      </TableCell>
+                    )}
+                    {isVisible('business_criticality') && (
+                      <TableCell>
+                        <Chip
+                          label={app.business_criticality}
+                          color={CRITICALITY_COLORS[app.business_criticality]}
+                          size="small"
+                          variant="outlined"
+                        />
+                      </TableCell>
+                    )}
+                    {isVisible('business_owner') && (
+                      <TableCell>
+                        {app.business_owner && (
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <PersonIcon fontSize="small" color="action" />
+                            {app.business_owner}
+                          </Box>
+                        )}
+                      </TableCell>
+                    )}
+                    {isVisible('business_capability') && (
+                      <TableCell>{app.business_capability || '-'}</TableCell>
+                    )}
+                    {/* Custom attribute values */}
+                    {customAttributes.filter(attr => attr.is_active && isVisible(`custom_${attr.id}`)).map(attr => (
+                      <TableCell key={attr.id}>
+                        {getCustomValue(app.id, attr.id)}
+                      </TableCell>
+                    ))}
                     <TableCell align="right">
                       <IconButton 
                         size="small" 
