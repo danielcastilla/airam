@@ -162,7 +162,7 @@ export const authService = {
     return jwt.sign(
       { userId: user.id, email: user.email, role: user.role, type: 'access' },
       secret,
-      { expiresIn }
+      { expiresIn: expiresIn as jwt.SignOptions['expiresIn'] }
     );
   },
 
@@ -173,7 +173,7 @@ export const authService = {
     return jwt.sign(
       { userId: user.id, email: user.email, role: user.role, type: 'refresh' },
       secret,
-      { expiresIn }
+      { expiresIn: expiresIn as jwt.SignOptions['expiresIn'] }
     );
   }
 };
