@@ -1,6 +1,9 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
+
+dotenv.config();
+
 import { logger } from './utils/logger';
 import { errorHandler } from './middleware/errorHandler';
 import { authMiddleware } from './middleware/auth';
@@ -17,26 +20,34 @@ import impactRoutes from './routes/impact.routes';
 import businessApplicationRoutes from './routes/businessApplication.routes';
 import customAttributeRoutes from './routes/customAttribute.routes';
 
-dotenv.config();
-
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// CORS - MUST be first middleware
-const allowedOrigins = process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000'];
+// CORS - MUST be the absolute first middleware
+const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:3000')
+  .split(',')
+  .map(o => o.trim().replace(/\/$/, '')); // Remove trailing slashes
 
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (origin && (allowedOrigins.includes(origin) || allowedOrigins.includes('*'))) {
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const origin = req.headers.origin as string;
+  
+  // Always set CORS headers
+  if (origin && allowedOrigins.some(allowed => origin === allowed || allowed === '*')) {
     res.setHeader('Access-Control-Allow-Origin', origin);
+  } else if (allowedOrigins.includes('*')) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
   }
+  
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
   
+  // Handle preflight immediately
   if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+    res.status(204).end();
+    return;
   }
+  
   next();
 });
 
