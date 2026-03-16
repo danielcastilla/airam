@@ -1,5 +1,5 @@
 -- ============================================
--- AIRAM - Enterprise Architecture Management
+-- Biztech - Enterprise Architecture Management
 -- Seed Data
 -- ============================================
 

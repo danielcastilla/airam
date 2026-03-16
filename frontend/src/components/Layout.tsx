@@ -167,7 +167,7 @@ export default function Layout({ children }: LayoutProps) {
             {(isMobile ? mobileOpen : desktopOpen) ? <ChevronLeftIcon /> : <MenuIcon />}
           </IconButton>
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1, fontWeight: 700 }}>
-            AIRAM
+            Biztech
           </Typography>
           <IconButton onClick={handleMenuClick} sx={{ p: 0 }}>
             <Avatar sx={{ bgcolor: 'primary.main' }}>

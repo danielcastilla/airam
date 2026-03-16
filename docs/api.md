@@ -1,4 +1,4 @@
-# AIRAM API Documentation
+# Biztech API Documentation
 
 ## Base URL
 
@@ -23,7 +23,7 @@ Login with email and password.
 **Request Body:**
 ```json
 {
-  "email": "admin@airam.com",
+  "email": "admin@biztech.com",
   "password": "admin123"
 }
 ```
@@ -35,7 +35,7 @@ Login with email and password.
   "data": {
     "user": {
       "id": "uuid",
-      "email": "admin@airam.com",
+      "email": "admin@biztech.com",
       "name": "Admin User",
       "role": "ADMIN"
     },

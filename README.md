@@ -1,4 +1,4 @@
-# AIRAM - Architecture Information & Resource Analytics Manager
+# Biztech - Enterprise Architecture Management
 
 Sistema de gestión de arquitectura empresarial (EAM) para visualizar y administrar el mapa tecnológico de una organización.
 

@@ -1,12 +1,12 @@
-# AIRAM - Architecture Documentation
+# Biztech - Architecture Documentation
 
 ## Overview
 
-AIRAM (Architecture Information Resource And Management) is a web application for Enterprise Architecture Management (EAM). It provides tools for managing application portfolios, technology stacks, system interfaces, dependencies, and performing impact analysis.
+Biztech is a web application for Enterprise Architecture Management (EAM). It provides tools for managing application portfolios, technology stacks, system interfaces, dependencies, and performing impact analysis.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                           AIRAM System                              │
+│                           Biztech System                            │
 ├─────────────────────────────────────────────────────────────────────┤
 │                                                                     │
 │  ┌─────────────────────────────────────────────────────────────┐   │
@@ -297,8 +297,8 @@ npm run dev
 
 ### Database Setup
 ```bash
-psql -U postgres -d airam -f database/schema.sql
-psql -U postgres -d airam -f database/seed.sql
+psql -U postgres -d biztech -f database/schema.sql
+psql -U postgres -d biztech -f database/seed.sql
 ```
 
 ## Deployment Considerations

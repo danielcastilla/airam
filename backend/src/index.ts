@@ -58,7 +58,7 @@ app.use(errorHandler);
 // Start server only if not in serverless environment
 if (process.env.VERCEL !== '1') {
   app.listen(PORT, () => {
-    logger.info(`🚀 AIRAM API Server running on port ${PORT}`);
+    logger.info(`🚀 Biztech API Server running on port ${PORT}`);
     logger.info(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
   });
 }

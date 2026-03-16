@@ -53,7 +53,7 @@ export default function Login() {
         <CardContent sx={{ p: { xs: 2, sm: 4 } }}>
           <Box sx={{ textAlign: 'center', mb: { xs: 3, sm: 4 } }}>
             <Typography variant="h4" fontWeight={700} color="primary" sx={{ fontSize: { xs: '1.75rem', sm: '2.125rem' } }}>
-              AIRAM
+              Biztech
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
               Enterprise Architecture Management
