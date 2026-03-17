@@ -6,20 +6,18 @@ const logFormat = printf(({ level, message, timestamp }) => {
   return `${timestamp} [${level}]: ${message}`;
 });
 
-export const logger = winston.createLogger({
-  level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
-  format: combine(
-    timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-    logFormat
-  ),
-  transports: [
-    new winston.transports.Console({
-      format: combine(
-        colorize(),
-        timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-        logFormat
-      )
-    }),
+const transports: winston.transport[] = [
+  new winston.transports.Console({
+    format: combine(
+      colorize(),
+      timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+      logFormat
+    )
+  })
+];
+
+if (!process.env.VERCEL) {
+  transports.push(
     new winston.transports.File({ 
       filename: 'logs/error.log', 
       level: 'error' 
@@ -27,5 +25,14 @@ export const logger = winston.createLogger({
     new winston.transports.File({ 
       filename: 'logs/combined.log' 
     })
-  ]
+  );
+}
+
+export const logger = winston.createLogger({
+  level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
+  format: combine(
+    timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+    logFormat
+  ),
+  transports
 });
